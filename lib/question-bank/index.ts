@@ -8,6 +8,7 @@ import { semester2Exams, upgradeEnglish10MidtermSix } from '@/lib/semester2-exam
 import { enrichUnitExam } from '@/lib/unit-enrichment';
 import { newBookUnitExams } from '@/lib/unit-new-books';
 import { quickTests10 } from '@/lib/question-bank/grade-10/quick-tests';
+import { grade10Midterm1Supplement } from '@/lib/question-bank/grade-10/midterm1-supplement';
 
 export type CoreGrade = 8 | 9 | 10;
 export type GradeLevel = ExtendedGrade | CoreGrade;
@@ -57,7 +58,7 @@ function prepareExams(items: Exam[], grade: CoreGrade) {
 
 const exams8 = distributeExams(prepareExams([...baseExams8, ...additionalExams8, ...semester2Exams[8]], 8));
 const balancedExams9 = distributeExams(prepareExams([...exams9, ...semester2Exams[9]], 9));
-const balancedExams10 = distributeExams(prepareExams(upgradeEnglish10MidtermSix([...exams10, ...quickTests10, ...semester2Exams[10]]), 10));
+const balancedExams10 = distributeExams(prepareExams(upgradeEnglish10MidtermSix([...exams10, ...quickTests10, grade10Midterm1Supplement, ...semester2Exams[10]]), 10));
 
 export const examsByGrade: Record<GradeLevel, Exam[]> = {
   6: extendedExams[6],
