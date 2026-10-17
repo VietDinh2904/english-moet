@@ -139,12 +139,16 @@ const grade10 = buildExam(1001, 10, 'Family Life', 'Pronunciation · Vocabulary 
   mcq('Pronunciation', 'Language Focus', 'Which word begins with the /br/ consonant blend?', ['cradle', 'brother', 'traffic', 'cleaner'], 1, '“Brother” begins with /br/.'),
   mcq('Pronunciation', 'Language Focus', 'Choose the word whose underlined blend is pronounced differently.', ['cream', 'create', 'crowd', 'bread'], 3, 'Cream, create and crowd begin with /kr/; bread begins with /br/.', ['cr', 'cr', 'cr', 'br']),
   mcq('Pronunciation', 'Language Focus', 'Which word begins with /tr/?', ['routine', 'train', 'groceries', 'bread'], 1, '“Train” begins with the /tr/ consonant blend.'),
+  mcq('Pronunciation', 'Language Focus', 'Which word contains the /kr/ consonant blend?', ['create', 'prepare', 'travel', 'bright'], 0, '“Create” begins with the /kr/ blend.'),
 
   mcq('Vocabulary', 'Language Focus', 'A person who earns most of the family income is a ___.', ['breadwinner', 'homemaker', 'neighbour', 'teenager'], 0, 'Breadwinner means the main income earner.'),
   mcq('Vocabulary', 'Language Focus', 'Sharing tasks prevents one person from carrying the whole ___.', ['routine', 'burden', 'grocery', 'bond'], 1, 'Burden means a heavy duty or responsibility.'),
   mcq('Vocabulary', 'Language Focus', 'Food and everyday household items bought from a shop are ___.', ['benefits', 'groceries', 'values', 'chores'], 1, 'Groceries are food and common household supplies.'),
   mcq('Vocabulary', 'Language Focus', 'Eating together regularly can strengthen the family ___.', ['bond', 'board', 'course', 'income'], 0, 'Family bond means the close relationship among family members.'),
   typed('Vocabulary', 'Language Focus', 'Complete the sentence with a Unit 1 noun.', 'routine', 'A routine is an activity done regularly in a usual order.', 'Packing school bags after dinner is part of our evening [[0]].'),
+  typed('Vocabulary', 'Language Focus', 'Complete the sentence with the correct form of the Unit phrase.', 'does the washing-up', 'Do the washing-up means wash the dishes after a meal; the singular subject needs does.', 'After dinner, Nam usually [[0]] while his sister clears the table.'),
+  mcq('Vocabulary', 'Language Focus', 'In the sentence “The children divide the household duties fairly”, “divide” is CLOSEST in meaning to ___.', ['share', 'avoid', 'delay', 'repeat'], 0, 'In this context, divide the duties means share the work among family members.'),
+  mcq('Vocabulary', 'Language Focus', 'In the sentence “This is only a temporary arrangement”, “temporary” is OPPOSITE in meaning to ___.', ['permanent', 'helpful', 'flexible', 'equal'], 0, 'Temporary means lasting for a limited time; permanent has the opposite meaning.'),
 
   mcq('Grammar', 'Language Focus', 'My father usually ___ the shopping list on Friday.', ['writes', 'is writing', 'write', 'writing'], 0, 'Usually signals the present simple; father is singular, so use writes.'),
   mcq('Grammar', 'Language Focus', 'Be quiet! The baby ___.', ['sleeps every day', 'is sleeping', 'sleep', 'slept now'], 1, 'The action is happening now, so use the present continuous.'),
@@ -152,6 +156,9 @@ const grade10 = buildExam(1001, 10, 'Family Life', 'Pronunciation · Vocabulary 
   mcq('Grammar', 'Language Focus', 'Mai ___ that shared chores are important.', ['understands', 'is understanding', 'understand', 'understanding'], 0, 'Understand is normally a stative verb, so use the present simple.'),
   typed('Grammar', 'Language Focus', 'Write the correct form of the verb in brackets.', 'is preparing', 'At the moment signals the present continuous.', 'Mum [[0]] (prepare) dinner at the moment.'),
   typed('Grammar', 'Language Focus', 'Complete both blanks with the correct verb forms.', ['takes', 'is doing'], 'Use present simple for the routine and present continuous for today’s temporary change.', 'Dad usually [[0]] (take) out the rubbish, but Lan [[1]] (do) it today.'),
+  mcq('Grammar', 'Language Focus', '___ your brother usually ___ breakfast for the family?', ['Does … make', 'Is … making', 'Do … makes', 'Does … makes'], 0, 'Use Does + singular subject + base verb for a present-simple question about a routine.'),
+  typed('Grammar', 'Language Focus', 'Put the verbs in brackets in the correct tenses.', ['checks', 'is repairing'], 'Use the present simple for a regular action and the present continuous for an action happening now.', 'My father usually [[0]] (check) the kitchen appliances, but today a technician [[1]] (repair) the cooker.'),
+  typed('Grammar', 'Language Focus', 'Find and correct the underlined verb form.', 'is working', 'At the moment signals an action in progress, so use is working.', 'At the moment, my mother works from the study. → At the moment, my mother [[0]] from the study.'),
 
   mcq('Reading', 'Reading', 'What does the family do at the Sunday meeting?', ['They plan meals, events and chores.', 'They decide everyone’s salary.', 'They invite their neighbours.', 'They complete all chores together.'], 0, 'They use a shared board to plan the coming week.'),
   mcq('Reading', 'Reading', 'Why is Mai cooking twice a week this month?', ['She is opening a restaurant.', 'Her father is taking an evening course.', 'Her brother refuses to help.', 'Her mother is travelling.'], 1, 'The change is temporary because Mr Tran is attending a course.'),
