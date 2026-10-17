@@ -1,32 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { Archive, BookOpen, BookMarked, ChevronDown, ChevronLeft, ChevronRight, Clock3, Coins, Flag, Languages, MapPinned, Menu, PackageOpen, RefreshCw, RotateCcw, Settings2, ShoppingBag, Sparkles, Target, X } from 'lucide-react';
+import { Archive, BookOpen, BookMarked, ChevronDown, ChevronLeft, ChevronRight, Clock3, Coins, Flag, Languages, MapPinned, Menu, PackageOpen, RefreshCw, RotateCcw, Search, Settings2, ShoppingBag, Sparkles, Target, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { exams as baseExams8, type Exam, type Question } from '@/lib/exams';
-import { additionalExams8 } from '@/lib/exams8-content';
-import { exams9 } from '@/lib/exams9';
-import { exams10 } from '@/lib/exams10';
+import { type Exam, type Question } from '@/lib/exams';
 import { vocabularyByGrade, type VocabularyItem } from '@/lib/vocabulary';
-import { distributeAnswers, distributeExams } from '@/lib/answer-distribution';
+import { distributeAnswers } from '@/lib/answer-distribution';
 import { GrammarLesson } from '@/components/grammar-lesson';
 import { grammarLessons8 } from '@/lib/grammar-lessons8';
 import { grammarLessons9 } from '@/lib/grammar-lessons9';
 import { grammarLessons10 } from '@/lib/grammar-lessons10';
-import { enrichUnitExam } from '@/lib/unit-enrichment';
 import { ExerciseQuestion } from '@/components/exercise-question';
 import { correctAnswer, formatAnswer, isAnswerComplete, isQuestionCorrect, questionKey, type AnswerValue } from '@/lib/question-utils';
-import { semester2Exams, upgradeEnglish10MidtermSix } from '@/lib/semester2-exams';
-import { newBookUnitExams } from '@/lib/unit-new-books';
-import { extendedExams, extendedGrammarLessons, extendedVocabulary, type ExtendedGrade } from '@/lib/extended-grades';
+import { extendedGrammarLessons, extendedVocabulary } from '@/lib/extended-grades';
+import { examsByGrade, filterQuestionBank, QUESTION_BANK_GROUPS, unitNumber, type GradeLevel, type MenuGroup, type QuestionBankSort } from '@/lib/question-bank';
 
 type Answers = Record<number, AnswerValue>;
 type ExamMode = 'practice' | 'test' | 'survival';
-type CoreGrade = 8 | 9 | 10;
-type GradeLevel = ExtendedGrade | CoreGrade;
-type MenuGroup = NonNullable<Exam['menuGroup']>;
 type ModelContext = { registerTool: (tool: Record<string, unknown>, options?: { signal: AbortSignal }) => void | Promise<void> };
 type DictionaryState = { word: string; translation: string; status: 'loading' | 'ready' | 'error' | 'empty'; x: number; y: number };
 type AidKind = 'cotton' | 'medicine' | 'injection';
@@ -124,47 +116,6 @@ function rollAidDrop(totalCorrect: number): AidKind {
   if (totalCorrect >= 10 && Math.random() < 0.35) return 'medicine';
   return 'cotton';
 }
-
-function unitNumber(exam: Exam, grade: GradeLevel) {
-  if (exam.unit) return exam.unit;
-  if (exam.menuGroup !== 'unit') return undefined;
-  return grade === 8 ? exam.id - 6 : grade === 9 ? exam.id - 100 : exam.id;
-}
-
-function prepareExams(items: Exam[], grade: CoreGrade) {
-  const enriched = items.map((exam) => enrichUnitExam(exam, grade));
-  const newByUnit = new Map(newBookUnitExams[grade].map((exam) => [exam.unit, exam]));
-  const inserted = new Set<number>();
-  const prepared: Exam[] = [];
-  for (const exam of enriched) {
-    const unit = unitNumber(exam, grade);
-    const newBook = unit ? newByUnit.get(unit) : undefined;
-    if (!unit || !newBook) {
-      prepared.push(exam);
-      continue;
-    }
-    const baseLabel = (exam.menuLabel ?? `Unit ${unit}`).replace(/ · Bộ cũ$/, '');
-    prepared.push({ ...exam, unit, bookLabel: 'Bộ cũ', menuLabel: `${baseLabel} · Bộ cũ` }, newBook);
-    inserted.add(unit);
-  }
-  for (const exam of newBookUnitExams[grade]) {
-    if (exam.unit && !inserted.has(exam.unit)) prepared.push(exam);
-  }
-  return prepared;
-}
-
-const exams8 = distributeExams(prepareExams([...baseExams8, ...additionalExams8, ...semester2Exams[8]], 8));
-const balancedExams9 = distributeExams(prepareExams([...exams9, ...semester2Exams[9]], 9));
-const balancedExams10 = distributeExams(prepareExams(upgradeEnglish10MidtermSix([...exams10, ...semester2Exams[10]]), 10));
-const examsByGrade: Record<GradeLevel, Exam[]> = {
-  6: extendedExams[6],
-  7: extendedExams[7],
-  8: exams8,
-  9: balancedExams9,
-  10: balancedExams10,
-  11: extendedExams[11],
-  12: extendedExams[12],
-};
 
 function shuffled<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
@@ -394,7 +345,11 @@ export default function Home() {
   const [equippedLoadout, setEquippedLoadout] = useState<Loadout>(STARTER_LOADOUT);
   const [reviewedVocabularyKeys, setReviewedVocabularyKeys] = useState<string[]>([]);
   const [visibleHints, setVisibleHints] = useState<Record<string, boolean>>({});
+  const [bankSearch, setBankSearch] = useState('');
+  const [bankGroup, setBankGroup] = useState<MenuGroup | 'all'>('all');
+  const [bankSort, setBankSort] = useState<QuestionBankSort>('curriculum');
   const availableExams = examsByGrade[grade];
+  const bankResults = useMemo(() => filterQuestionBank(availableExams, grade, bankSearch, bankGroup, bankSort), [availableExams, bankGroup, bankSearch, bankSort, grade]);
   const exam = availableExams[examIndex];
   const selectedUnit = unitNumber(exam, grade);
   const unitLesson = exam.menuGroup === 'unit' && selectedUnit
@@ -626,6 +581,9 @@ export default function Home() {
     setVocabHintSteps({});
     setVisibleHints({});
     setBossPenalty(null);
+    setBankSearch('');
+    setBankGroup('all');
+    setBankSort('curriculum');
   };
 
   const switchMode = (nextMode: ExamMode) => {
@@ -1056,29 +1014,47 @@ export default function Home() {
 
   const renderExamButton = (item: (typeof availableExams)[number], index: number) => (
     <button key={item.id} onClick={() => selectExam(index)} className={`group rounded-2xl px-3 py-2.5 text-left transition ${index === examIndex ? 'bg-sky-600 text-white shadow-md shadow-sky-100' : 'bg-sky-50 text-[#15324a] hover:bg-sky-100'}`}>
-      <span className="block font-bold">{item.menuLabel ?? `Đề số ${item.id}`}</span>
+      <span className="flex items-start justify-between gap-2"><b>{item.menuLabel ?? `Đề số ${item.id}`}</b><small className={`shrink-0 rounded-full px-2 py-0.5 font-bold ${index === examIndex ? 'bg-white/20 text-white' : 'bg-white text-sky-700'}`}>{item.questions.length} câu</small></span>
       {item.bookLabel && <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${index === examIndex ? 'bg-white/20 text-white' : item.bookLabel === 'Bộ mới' ? 'bg-amber-100 text-amber-800' : 'bg-white text-slate-500'}`}>{item.bookLabel}</span>}
     </button>
   );
 
-  const menuGroups: [MenuGroup, string][] = [
-    ['unit', 'Học theo Unit'],
-    ['review', 'Ôn tập'],
-    ...(grade === 9 ? [['survey', 'Khảo sát đầu năm'] as [MenuGroup, string]] : []),
-    ['midterm', 'Đề giữa kỳ I'],
-    ['final', 'Đề cuối kỳ I'],
-    ['midterm2', 'Đề giữa kỳ II'],
-    ['final2', 'Đề cuối kỳ II'],
-  ];
+  const menuGroups = QUESTION_BANK_GROUPS.filter(([group]) => availableExams.some((item) => item.menuGroup === group));
 
   const examMenu = (
     <div>
-      <p className="mb-3 text-xs font-bold uppercase tracking-[.16em] text-sky-700">Nội dung · English {grade}</p>
+      <div className="mb-4 rounded-2xl border border-sky-100 bg-sky-50 p-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-xs font-black uppercase tracking-[.14em] text-sky-800">Ngân hàng đề · Lớp {grade}</p>
+          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-sky-700">{bankResults.length}/{availableExams.length}</span>
+        </div>
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-sky-600" aria-hidden="true"/>
+          <input value={bankSearch} onChange={(event) => setBankSearch(event.target.value)} placeholder="Tìm đề, Unit, câu hỏi…" className="w-full rounded-xl border border-sky-200 bg-white py-2.5 pl-9 pr-8 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-200"/>
+          {bankSearch && <button onClick={() => setBankSearch('')} aria-label="Xóa từ khóa" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X className="size-3.5"/></button>}
+        </label>
+        <div className="mt-2 grid gap-2">
+          <label className="grid gap-1 text-[11px] font-bold text-slate-600">Loại bài
+            <select value={bankGroup} onChange={(event) => setBankGroup(event.target.value as MenuGroup | 'all')} className="min-w-0 rounded-xl border border-sky-200 bg-white px-2 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-sky-500">
+              <option value="all">Tất cả loại bài</option>
+              {menuGroups.map(([group, label]) => <option key={group} value={group}>{label}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1 text-[11px] font-bold text-slate-600">Sắp xếp
+            <select value={bankSort} onChange={(event) => setBankSort(event.target.value as QuestionBankSort)} className="min-w-0 rounded-xl border border-sky-200 bg-white px-2 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-sky-500">
+              <option value="curriculum">Theo chương trình</option>
+              <option value="title">Theo tên A–Z</option>
+              <option value="questions-desc">Nhiều câu nhất</option>
+              <option value="questions-asc">Ít câu nhất</option>
+            </select>
+          </label>
+        </div>
+      </div>
       <nav className="grid gap-3">
         {menuGroups.map(([group, label]) => {
-          const groupItems = availableExams
-            .map((item, index) => ({ item, index }))
-            .filter(({ item }) => item.menuGroup === group);
+          const groupItems = bankResults
+            .filter(({ exam: item }) => item.menuGroup === group)
+            .map(({ exam: item, index }) => ({ item, index }));
 
           if (groupItems.length === 0) return null;
 
@@ -1095,6 +1071,7 @@ export default function Home() {
             </div>
           </details>;
         })}
+        {bankResults.length === 0 && <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50 px-3 py-5 text-center text-sm text-slate-600"><Search className="mx-auto mb-2 size-5 text-sky-500"/><strong className="block text-slate-800">Không tìm thấy bài phù hợp</strong><button onClick={() => { setBankSearch(''); setBankGroup('all'); }} className="mt-2 font-bold text-sky-700 hover:underline">Xóa bộ lọc</button></div>}
       </nav>
     </div>
   );
