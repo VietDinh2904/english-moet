@@ -1,5 +1,7 @@
 export type Question = {
   id: number;
+  /** Grade namespace used to keep randomisation, history and saved questions isolated. */
+  grade?: number;
   section: 'Language Focus' | 'Reading' | 'Writing';
   skillArea?: 'Pronunciation' | 'Vocabulary' | 'Grammar' | 'Reading' | 'Writing' | 'Looking Back';
   prompt: string;

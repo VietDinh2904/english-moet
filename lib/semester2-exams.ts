@@ -11,6 +11,52 @@ const topics: Record<Grade, { midterm2: string[]; final2: string[] }> = {
 
 const names = ['An', 'Mai', 'Linh', 'Nam', 'Minh', 'Lan', 'Vy'];
 
+const gradeWriting: Record<Grade, {
+  rearrange: [string, string, string];
+  answers: [string, string, string];
+  readingLead: string;
+}> = {
+  8: {
+    rearrange: [
+      'students / should / information / protect / personal / online\n→ [[0]]',
+      'our / prepared / club / display / a / recycling\n→ [[0]]',
+      'because / useful / joined / activity / we / the / was / it\n→ [[0]]',
+    ],
+    answers: [
+      'Students should protect personal information online',
+      'Our club prepared a recycling display',
+      'We joined the activity because it was useful',
+    ],
+    readingLead: 'Students in our lower-secondary class explored a practical issue connected with',
+  },
+  9: {
+    rearrange: [
+      'tourists / should / customs / local / respect / always\n→ [[0]]',
+      'team / completed / survey / the / successfully / our\n→ [[0]]',
+      'although / challenging / project / was / the / we / finished / it\n→ [[0]]',
+    ],
+    answers: [
+      'Tourists should always respect local customs',
+      'Our team completed the survey successfully',
+      'Although the project was challenging, we finished it',
+    ],
+    readingLead: 'A group of ninth-grade students investigated a local question related to',
+  },
+  10: {
+    rearrange: [
+      'learners / should / sources / evaluate / online / reliable\n→ [[0]]',
+      'research / presented / team / findings / the / clearly / our\n→ [[0]]',
+      'the / evidence / because / convincing / proposal / was / succeeded\n→ [[0]]',
+    ],
+    answers: [
+      'Learners should evaluate reliable online sources',
+      'Our team presented the research findings clearly',
+      'The proposal succeeded because the evidence was convincing',
+    ],
+    readingLead: 'Grade 10 learners carried out an evidence-based project concerning',
+  },
+};
+
 function mcq(id: number, prompt: string, options: string[], answer: number, explanation: string): Question {
   return { id, section: 'Language Focus', prompt, options, answer, explanation };
 }
@@ -22,6 +68,7 @@ function typed(id: number, prompt: string, template: string, answers: string[], 
 function createMixedQuestions(grade: Grade, period: Period, set: number): Question[] {
   const theme = topics[grade][period][(set - 1) % 3];
   const person = names[(set - 1) % names.length];
+  const gradeContent = gradeWriting[grade];
   const questions: Question[] = [];
   const transformations = [
     { word: 'ALTHOUGH', source: 'The task was difficult, but the students did not give up.', target: '[[0]], the students did not give up.', answer: 'Although the task was difficult', explanation: 'Although + clause expresses contrast.' },
@@ -64,15 +111,15 @@ function createMixedQuestions(grade: Grade, period: Period, set: number): Questi
     {
       id: 35, section: 'Reading', kind: 'cloze-dropdown',
       prompt: 'Read the whole passage and choose an option at each blank.',
-      template: `Our class recently completed a project about ${theme}. First, we [[0]] into small teams. Each team chose a question [[1]] it wanted to investigate. We used reliable websites [[2]] collect information and then compared our notes. The final posters were [[3]] in the school library, where many students stopped to read them. The project was challenging, [[4]] it taught us how to cooperate.`,
+      template: `${gradeContent.readingLead} ${theme}. First, we [[0]] into small teams. Each team chose a question [[1]] it wanted to investigate. We used reliable websites [[2]] collect information and then compared our notes. The final posters were [[3]] in the school library, where many students stopped to read them. The project was challenging, [[4]] it taught us how to cooperate.`,
       options: [], answer: ['divided', 'that', 'to', 'displayed', 'but'],
       gapOptions: [['divided', 'divide', 'dividing', 'division'], ['that', 'who', 'where', 'whose'], ['to', 'for', 'by', 'at'], ['displayed', 'displaying', 'display', 'displays'], ['but', 'because', 'unless', 'so that']],
       explanation: 'The answers follow the passive form, a relative clause, an infinitive of purpose, another passive form, and a contrast connector.',
       hint: 'Read the whole passage. Check the grammar immediately before and after every blank.',
     },
-    typed(36, 'Rearrange the given words to make a complete sentence. Do not change the words.', `students / should / sources / reliable / use / online\n→ [[0]]`, ['Students should use reliable online sources'], 'Order: subject + modal + base verb + adjective + noun.', [['Students should use reliable online sources', 'students should use reliable online sources.']]),
-    typed(37, 'Rearrange the given words to make a complete sentence. Do not change the words.', `our / finished / team / project / the / on time\n→ [[0]]`, ['Our team finished the project on time'], 'Use normal English order: subject + verb + object + time phrase.'),
-    typed(38, 'Rearrange the given words to make a complete sentence. Do not change the words.', `because / useful / activity / enjoyed / was / it / the / we\n→ [[0]]`, ['We enjoyed the activity because it was useful'], 'Place the main clause before the because-clause.'),
+    typed(36, 'Rearrange the given words to make a complete sentence. Do not change the words.', gradeContent.rearrange[0], [gradeContent.answers[0]], 'Use the grade-level target pattern and normal English word order.'),
+    typed(37, 'Rearrange the given words to make a complete sentence. Do not change the words.', gradeContent.rearrange[1], [gradeContent.answers[1]], 'Use normal English order: subject + verb + object or complement.'),
+    typed(38, 'Rearrange the given words to make a complete sentence. Do not change the words.', gradeContent.rearrange[2], [gradeContent.answers[2]], 'Identify the main clause and the connector clause before ordering the words.'),
     typed(39, 'Complete the second sentence so that it means the same as the first.', `This is the first time ${person} has joined a school project.\n→ ${person} has [[0]] a school project before.`, ['never joined'], '“This is the first time…” can be rewritten with the present perfect and “never … before”.'),
     { ...typed(40, 'Complete the second sentence using the word in capitals. Do not change the given word.', `${transformation.source}\n→ ${transformation.target}`, [transformation.answer], transformation.explanation), givenWord: transformation.word },
   );

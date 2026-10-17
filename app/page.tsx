@@ -152,12 +152,13 @@ function capMultipleChoiceOptions(question: Question): Question {
   return { ...question, options, answer };
 }
 
-function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, targetCount: number, seenBefore: Set<string>, pinnedKey?: string | null, excludeTypedVocabulary = false, selectionOnly = false, reviewedVocabularyExamIds: Set<number> = new Set(), excludeLookingBack = false) {
+function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, targetCount: number, seenBefore: Set<string>, grade: GradeLevel, pinnedKey?: string | null, excludeTypedVocabulary = false, selectionOnly = false, reviewedVocabularyExamIds: Set<number> = new Set(), excludeLookingBack = false) {
   const sourceEntries = allExams.map((source, sourceIndex) => ({ source, sourceIndex })).filter(({ source }) => exam.menuGroup === 'unit'
     ? source.menuGroup === 'unit' && source.unit === exam.unit
     : source.id === exam.id);
   const sourcePool = sourceEntries.flatMap(({ source, sourceIndex }) => source.questions.map((question) => ({
     ...question,
+    grade,
     passage: question.section === 'Reading' ? source.passage : undefined,
     passageTitle: question.section === 'Reading' ? source.passageTitle : undefined,
     sourceIndex,
@@ -358,7 +359,7 @@ export default function Home() {
       : grade === 8 ? grammarLessons8[selectedUnit] : grade === 9 ? grammarLessons9[selectedUnit] : grammarLessons10[selectedUnit]
     : undefined;
   const reviewedVocabularyExamIds = useMemo(() => new Set(availableExams.filter((item) => reviewedVocabularyKeys.includes(`${grade}-${item.id}`)).map((item) => item.id)), [availableExams, grade, reviewedVocabularyKeys]);
-  const questions = useMemo(() => buildMixedQuestions(exam, availableExams, examIndex, mode === 'practice' ? exam.questions.length : 40, seenAtSelection, focusQuestionKey, mode === 'test', mode === 'survival', reviewedVocabularyExamIds, mode === 'test'), [availableExams, exam, examIndex, focusQuestionKey, mode, reviewedVocabularyExamIds, seenAtSelection]);
+  const questions = useMemo(() => buildMixedQuestions(exam, availableExams, examIndex, mode === 'practice' ? exam.questions.length : 40, seenAtSelection, grade, focusQuestionKey, mode === 'test', mode === 'survival', reviewedVocabularyExamIds, mode === 'test'), [availableExams, exam, examIndex, focusQuestionKey, grade, mode, reviewedVocabularyExamIds, seenAtSelection]);
   const question = questions[questionIndex];
   const questionPages = useMemo(() => buildQuestionPages(questions), [questions]);
   const currentPageIndex = mode === 'survival' ? 0 : Math.max(0, questionPages.findIndex((page) => page.includes(questionIndex)));
