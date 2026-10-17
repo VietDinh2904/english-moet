@@ -29,7 +29,8 @@ export type Exam = {
   bookLabel?: 'Bộ cũ' | 'Bộ mới';
   skipEnrichment?: boolean;
   menuLabel?: string;
-  menuGroup?: 'review' | 'survey' | 'midterm' | 'final' | 'midterm2' | 'final2' | 'unit';
+  menuGroup?: 'review' | 'survey' | 'quick-test' | 'midterm' | 'final' | 'midterm2' | 'final2' | 'unit';
+  durationMinutes?: number;
   title: string;
   theme: string;
   sourceNote?: string;

@@ -515,7 +515,7 @@ export default function Home() {
     setHintOpen(false);
     setFlagged([]);
     setSubmitted(false);
-    setSecondsLeft(mode === 'survival' ? 2 * 60 : 60 * 60);
+    setSecondsLeft(mode === 'survival' ? 2 * 60 : (availableExams[index]?.durationMinutes ?? 60) * 60);
     setDictionary(null);
     setWrongAttempts({});
     setDamage(0);
@@ -541,7 +541,7 @@ export default function Home() {
     setVocabHintSteps({});
     setVisibleHints({});
     setBossPenalty(null);
-  }, [mode]);
+  }, [availableExams, mode]);
 
   const switchGrade = (nextGrade: GradeLevel) => {
     setSeenAtSelection(readSeenQuestions());
@@ -555,7 +555,7 @@ export default function Home() {
     setHintOpen(false);
     setFlagged([]);
     setSubmitted(false);
-    setSecondsLeft(mode === 'survival' ? 2 * 60 : 60 * 60);
+    setSecondsLeft(mode === 'survival' ? 2 * 60 : (examsByGrade[nextGrade][0]?.durationMinutes ?? 60) * 60);
     setDictionary(null);
     setWrongAttempts({});
     setDamage(0);
@@ -597,7 +597,7 @@ export default function Home() {
     setHintOpen(false);
     setFlagged([]);
     setSubmitted(false);
-    setSecondsLeft(nextMode === 'survival' ? 2 * 60 : 60 * 60);
+    setSecondsLeft(nextMode === 'survival' ? 2 * 60 : (exam.durationMinutes ?? 60) * 60);
     setDictionary(null);
     setWrongAttempts({});
     setDamage(0);
@@ -1102,7 +1102,7 @@ export default function Home() {
           </div>
           <div className="mb-3 grid gap-2 text-sm sm:grid-cols-3">
             <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sky-950"><strong>Luyện tập:</strong> 10 câu mỗi trang, câu nào cũng có Hint. Sai lần 1 xem gợi ý; lần 2 khóa 10 giây; từ lần 3 khóa 20 giây. Bôi đen tiếng Anh để tự bật nghĩa.</div>
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700"><strong>Làm bài test:</strong> 10 câu mỗi trang; 40 câu trong 60 phút. Làm đủ và nộp bài mới xem đáp án, lời giải.</div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700"><strong>Làm bài test:</strong> 10 câu mỗi trang; {questions.length} câu trong {exam.durationMinutes ?? 60} phút. Làm đủ và nộp bài mới xem đáp án, lời giải.</div>
             <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950"><strong>Survival:</strong> có 2 phút và 5 máu. Đúng 10 câu để qua màn, nâng phương tiện và cộng thêm 1 phút. Màn Boss chỉ có 3 máu.</div>
           </div>
           <div className="mb-5 grid grid-cols-3 rounded-2xl border border-sky-100 bg-white p-1.5 shadow-sm">
