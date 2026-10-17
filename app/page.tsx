@@ -202,12 +202,17 @@ function capMultipleChoiceOptions(question: Question): Question {
 }
 
 function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, targetCount: number, seenBefore: Set<string>, pinnedKey?: string | null, excludeTypedVocabulary = false, selectionOnly = false, reviewedVocabularyExamIds: Set<number> = new Set(), excludeLookingBack = false) {
-  const sourcePool = allExams.flatMap((source, sourceIndex) => source.questions.map((question) => ({
+  const sourceEntries = allExams.map((source, sourceIndex) => ({ source, sourceIndex })).filter(({ source }) => exam.menuGroup === 'unit'
+    ? source.menuGroup === 'unit' && source.unit === exam.unit
+    : source.id === exam.id);
+  const sourcePool = sourceEntries.flatMap(({ source, sourceIndex }) => source.questions.map((question) => ({
     ...question,
     passage: question.section === 'Reading' ? source.passage : undefined,
     passageTitle: question.section === 'Reading' ? source.passageTitle : undefined,
     sourceIndex,
+    fromNewBook: source.bookLabel === 'Bộ mới',
   }))).filter((question) => !(excludeTypedVocabulary && isTypedVocabularyQuestion(question)))
+    .filter((question) => !(exam.menuGroup === 'unit' && question.skillArea === 'Vocabulary' && !question.fromNewBook))
     .filter((question) => !isDirectVocabularyMeaningQuestion(question))
     .filter((question) => !(selectionOnly && (question.kind === 'typed' || question.kind === 'cloze-dropdown' || question.options.length < 2)))
     .filter((question) => !(excludeLookingBack && question.skillArea === 'Looking Back'))
@@ -231,9 +236,11 @@ function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, ta
     used.add(key); chosen.push(item); return true;
   };
 
-  const language = priority(pool.filter((item) => item.section === 'Language Focus'));
+  const vocabularyQuestions = priority(pool.filter((item) => item.skillArea === 'Vocabulary'));
+  for (const item of vocabularyQuestions) take(item);
+  const language = priority(pool.filter((item) => item.section === 'Language Focus' && item.skillArea !== 'Vocabulary'));
   const formats = ['mcq', 'true-false', 'typed', 'unscramble', 'cloze'];
-  let languageCount = 0;
+  let languageCount = chosen.filter((item) => item.section === 'Language Focus').length;
   while (languageCount < languageTarget) {
     let added = false;
     for (const format of formats) {
@@ -269,10 +276,11 @@ function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, ta
     take(item);
   }
 
-  const languageBlock = shuffled(chosen.filter((item) => item.section === 'Language Focus'));
+  const vocabularyBlock = shuffled(chosen.filter((item) => item.skillArea === 'Vocabulary'));
+  const languageBlock = shuffled(chosen.filter((item) => item.section === 'Language Focus' && item.skillArea !== 'Vocabulary'));
   const readingBlock = chosen.filter((item) => item.section === 'Reading');
   const writingBlock = shuffled(chosen.filter((item) => item.section === 'Writing'));
-  let arranged = [...languageBlock, ...readingBlock, ...writingBlock].slice(0, targetCount);
+  let arranged = [...vocabularyBlock, ...languageBlock, ...readingBlock, ...writingBlock].slice(0, targetCount);
   if (pinnedKey) {
     const pinned = pool.find((item) => questionKey(item) === pinnedKey);
     if (pinned) arranged = [pinned, ...arranged.filter((item) => questionKey(item) !== pinnedKey)].slice(0, targetCount);
@@ -1107,31 +1115,10 @@ export default function Home() {
         </div>
       </header>
 
-      <section id="journey-map" className="relative isolate min-h-[330px] overflow-hidden border-b-4 border-cyan-200 bg-sky-900 shadow-inner sm:min-h-[430px]" aria-label={`Bản đồ các chặng English ${grade}`}>
-        <img src="learning-journey-map-v1.png" alt="" className="absolute inset-0 -z-20 h-full w-full object-cover"/>
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-sky-950/10 via-transparent to-sky-950/55"/>
-        <div className="mx-auto flex max-w-6xl items-start justify-between gap-4 px-5 pt-5 text-white"><div className="rounded-2xl bg-slate-950/75 px-5 py-3 shadow-xl backdrop-blur-sm"><p className="text-xs font-black uppercase tracking-[.2em] text-cyan-300">Learning Journey</p><h1 className="text-2xl font-black">Chọn chặng English {grade}</h1><p className="mt-1 text-sm text-sky-100">Bấm trực tiếp vào một điểm trên bản đồ để bắt đầu.</p></div><div className="rounded-full bg-amber-300 px-4 py-2 font-black text-amber-950 shadow-lg">🪙 {duckCoins}</div></div>
-        {JOURNEY_STAGES.map((stage) => { const stageExams = stage.group === 'survival' ? [] : availableExams.filter((item) => item.menuGroup === stage.group); const completed = stage.group === 'survival' ? (survivalStage > 0 ? 1 : 0) : stageExams.filter((item) => completedExamKeys.includes(`${grade}-${item.id}`)).length; const total = stage.group === 'survival' ? 1 : stageExams.length; return <button key={stage.group} onClick={() => openJourneyStage(stage.group)} disabled={stage.group !== 'survival' && total === 0} className={`journey-node absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-4 p-1 text-center shadow-2xl transition hover:scale-110 focus-visible:outline-4 focus-visible:outline-white disabled:opacity-35 ${completed >= total && total > 0 ? 'border-emerald-200 bg-emerald-600 text-white' : 'border-amber-300 bg-white text-sky-950'}`} style={{ left: `${stage.position[0]}%`, top: `${stage.position[1]}%` }}><span className="block text-2xl sm:text-3xl">{completed >= total && total > 0 ? '✓' : stage.icon}</span><b className="block whitespace-nowrap rounded-full bg-slate-950/85 px-2 py-1 text-[9px] text-white sm:text-xs">{stage.label} · {completed}/{Math.max(1, total)}</b></button>; })}
-      </section>
-
       <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[210px_minmax(0,1fr)_250px]">
         <aside className="hidden self-start rounded-3xl border border-sky-100 bg-white p-4 shadow-sm lg:block">{examMenu}</aside>
 
         <section className="min-w-0" onContextMenu={openDictionary} onMouseUp={openDictionaryFromSelection}>
-          <div className="mb-5 overflow-hidden rounded-[28px] border border-indigo-100 bg-gradient-to-r from-indigo-950 via-sky-900 to-cyan-800 text-white shadow-[0_18px_45px_rgba(30,64,175,.18)]">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/15 px-5 py-4">
-              <div><p className="text-xs font-black uppercase tracking-[.2em] text-cyan-200">Adventure Hub</p><strong className="text-xl">Hành trình English {grade}</strong></div>
-              <div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1.5 text-sm font-black text-amber-950"><Coins className="size-4"/> {duckCoins} Duck Coins</span><div className="flex rounded-full bg-white/10 p-1 text-[11px] font-bold"><span className="grid place-items-center px-2"><Settings2 className="size-3.5"/></span>{(['full', 'light', 'off'] as EffectLevel[]).map((level) => <button key={level} onClick={() => setEffectLevel(level)} className={`rounded-full px-2 py-1 ${effectLevel === level ? 'bg-white text-sky-900' : 'text-white/75 hover:bg-white/10'}`}>{level === 'full' ? 'Đầy đủ' : level === 'light' ? 'Nhẹ' : 'Tắt'}</button>)}</div></div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3">
-              <button onClick={() => document.getElementById('journey-map')?.scrollIntoView({ behavior: 'smooth' })} className="group flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-left transition hover:-translate-y-0.5 hover:bg-white/20"><span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-300 text-emerald-950"><MapPinned/></span><span><b className="block">Bản đồ nền</b><small className="text-white/70">Xem các chặng phía trên</small></span></button>
-              <button onClick={() => setHubPanel('vault')} className="group flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-left transition hover:-translate-y-0.5 hover:bg-white/20"><span className="grid h-11 w-11 place-items-center rounded-xl bg-amber-300 text-amber-950"><Archive/></span><span><b className="block">Vault cờ</b><small className="text-white/70">{flagVault.length} vị trí đã lưu</small></span></button>
-              <button onClick={() => setHubPanel('wrong')} className="group flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-left transition hover:-translate-y-0.5 hover:bg-white/20"><span className="grid h-11 w-11 place-items-center rounded-xl bg-rose-300 text-rose-950"><BookMarked/></span><span><b className="block">Sổ câu sai</b><small className="text-white/70">{wrongBook.length} câu cần ôn</small></span></button>
-              <button onClick={() => setHubPanel('missions')} className="group flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-left transition hover:-translate-y-0.5 hover:bg-white/20"><span className="grid h-11 w-11 place-items-center rounded-xl bg-violet-300 text-violet-950"><Target/></span><span><b className="block">Nhiệm vụ</b><small className="text-white/70">{dailyDone}/3 hoàn thành</small></span></button>
-              <button onClick={() => setHubPanel('shop')} className="group flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-left transition hover:-translate-y-0.5 hover:bg-white/20"><span className="grid h-11 w-11 place-items-center rounded-xl bg-cyan-300 text-cyan-950"><ShoppingBag/></span><span><b className="block">Cửa hàng</b><small className="text-white/70">Mua bằng Duck Coin</small></span></button>
-              <button onClick={() => setHubPanel('inventory')} className="group flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-left transition hover:-translate-y-0.5 hover:bg-white/20"><span className="grid h-11 w-11 place-items-center rounded-xl bg-lime-300 text-lime-950"><PackageOpen/></span><span><b className="block">Rương đồ</b><small className="text-white/70">{ownedLoadout.length} vật phẩm</small></span></button>
-            </div>
-          </div>
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div><p className="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-sky-700"><BookOpen className="size-4"/> English {grade} · {question.section}</p><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{exam.title}</h1></div>
             <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold shadow-sm">{mode === 'survival' ? `Câu ${questionIndex + 1} / ${questions.length}` : `Trang ${currentPageIndex + 1} / ${questionPages.length}`}</span>
@@ -1186,7 +1173,8 @@ export default function Home() {
               </div>
             </article>
           ) : (
-            <div className="space-y-5">
+            <div>
+              <div className="max-h-[72vh] space-y-5 overflow-y-auto overscroll-contain pr-2 [scrollbar-gutter:stable]" aria-label="Khu vực câu hỏi có thanh cuộn riêng">
               {visibleQuestionIndexes.map((itemIndex, visibleIndex) => {
                 const item = questions[itemIndex];
                 const itemKey = questionKey(item);
@@ -1209,7 +1197,8 @@ export default function Home() {
                   {mode === 'survival' && <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-center text-sm font-bold text-amber-900">Chọn đáp án — Survival sẽ tự chuyển sang câu kế tiếp.</p>}
                 </article>;
               })}
-              {mode !== 'survival' && <nav className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm" aria-label="Phân trang câu hỏi"><Button variant="outline" disabled={currentPageIndex === 0} onClick={() => setQuestionIndex(questionPages[currentPageIndex - 1]?.[0] ?? 0)} className="rounded-xl"><ChevronLeft/> 10 câu trước</Button><strong className="text-sm text-slate-600">Câu {(visibleQuestionIndexes[0] ?? 0) + 1}–{(visibleQuestionIndexes.at(-1) ?? 0) + 1} / {questions.length}</strong>{currentPageIndex === questionPages.length - 1 ? <Button disabled={!canSubmit} onClick={submitExam} className="rounded-xl bg-[#123c5a] px-5 hover:bg-[#0e3048]">{mode === 'test' ? 'Nộp bài' : 'Xem tổng kết'}</Button> : <Button onClick={() => setQuestionIndex(questionPages[currentPageIndex + 1]?.[0] ?? questionIndex)} className="rounded-xl bg-sky-600 px-5 hover:bg-sky-700">10 câu tiếp <ChevronRight/></Button>}</nav>}
+              </div>
+              {mode !== 'survival' && <nav className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm" aria-label="Phân trang câu hỏi"><Button variant="outline" disabled={currentPageIndex === 0} onClick={() => setQuestionIndex(questionPages[currentPageIndex - 1]?.[0] ?? 0)} className="rounded-xl"><ChevronLeft/> 10 câu trước</Button><strong className="text-sm text-slate-600">Câu {(visibleQuestionIndexes[0] ?? 0) + 1}–{(visibleQuestionIndexes.at(-1) ?? 0) + 1} / {questions.length}</strong>{currentPageIndex === questionPages.length - 1 ? <Button disabled={!canSubmit} onClick={submitExam} className="rounded-xl bg-[#123c5a] px-5 hover:bg-[#0e3048]">{mode === 'test' ? 'Nộp bài' : 'Xem tổng kết'}</Button> : <Button onClick={() => setQuestionIndex(questionPages[currentPageIndex + 1]?.[0] ?? questionIndex)} className="rounded-xl bg-sky-600 px-5 hover:bg-sky-700">10 câu tiếp <ChevronRight/></Button>}</nav>}
             </div>
           )}
         </section>
@@ -1235,13 +1224,6 @@ export default function Home() {
             </div>
             <p className="mt-3 text-xs leading-5 text-white/85">Dao: mỗi câu đúng hạ 1 gà. Lựu đạn dọn nhiều gà nhưng làm mờ màn hình 4 giây. Bút chì chỉ mở sau bài test 100% và dọn màn hình một lần.</p>
           </div> : mode === 'test' ? <div className="rounded-3xl bg-[#123c5a] p-5 text-white shadow-lg shadow-sky-100"><div className="mb-3 flex items-center justify-between"><span className="text-sm text-sky-100">Thời gian còn lại</span><Clock3 className="size-5 text-amber-300"/></div><strong suppressHydrationWarning className="font-mono text-3xl tracking-tight">{formatTime(secondsLeft)}</strong><div className="mt-4 flex justify-between border-t border-white/15 pt-3 text-sm"><span>Đã làm</span><b>{answeredCount}/{questions.length}</b></div><Button disabled={!canSubmit} onClick={submitExam} className="mt-4 w-full bg-amber-500 font-bold text-white hover:bg-amber-600">NỘP BÀI</Button>{answeredCount < questions.length && <p className="mt-2 text-center text-xs leading-5 text-sky-100">Làm đủ {questions.length} câu để mở nút nộp bài.</p>}</div> : <div className="rounded-3xl bg-sky-600 p-5 text-white shadow-lg shadow-sky-100"><div className="flex items-center justify-between"><span className="font-bold">Luyện tập có trợ giúp</span><BookOpen className="size-5 text-amber-200"/></div><p className="mt-2 text-sm leading-6 text-sky-50">Sai nhiều sẽ làm màn hình nứt. Dùng vật phẩm trong tủ cấp cứu trước khi máu về 0.</p><div className="mt-4 flex justify-between border-t border-white/20 pt-3 text-sm"><span>Đã luyện</span><b>{answeredCount}/{questions.length}</b></div>{canSubmit && <Button onClick={submitExam} className="mt-4 w-full bg-white font-bold text-sky-700 hover:bg-sky-50">XEM TỔNG KẾT</Button>}</div>}
-          {mode === 'practice' && <div className="overflow-hidden rounded-3xl border border-rose-100 bg-white shadow-sm">
-            <div className="grid grid-cols-[96px_1fr] gap-3 p-4">
-              <DuckLoadoutAvatar loadout={equippedLoadout} rankIndex={rankIndex} rankName={rankName}/>
-              <div><p className="text-xs font-bold uppercase tracking-wider text-amber-700">{rankName}</p><strong className="mt-1 block text-lg text-slate-900">Chuỗi đúng: {correctStreak}</strong><p className="text-xs text-slate-500">Kỷ lục: {bestStreak} · Mốc tiếp: {correctStreak < 10 ? 10 : correctStreak < 20 ? 20 : correctStreak < 30 ? 30 : correctStreak < 40 ? 40 : '100%'}</p></div>
-            </div>
-            <div className="border-t border-rose-100 bg-rose-50 p-4"><div className="flex items-center justify-between text-sm"><strong className="text-rose-900">Máu còn lại</strong><span className="font-bold text-rose-700">{Math.max(0, maxDamage - damage)}/{maxDamage}</span></div><div className="mt-2 h-2.5 overflow-hidden rounded-full bg-rose-200"><div className="h-full bg-rose-500 transition-all" style={{ width: `${100 - damagePercent}%` }} /></div>{armorUnlocked && <div className="mt-3 flex items-center gap-3 rounded-xl border border-slate-300 bg-slate-900 px-3 py-2 text-xs text-white"><img src="duck-kevlar-v2.png" alt="Vịt mặc giáp bảo vệ" className="h-12 w-12 object-contain"/><span><strong className="block text-amber-300">Giáp Kevlar: {armorPoints}/5</strong>Giáp đỡ sai trước máu thật và không thể hồi bằng tủ thuốc.</span></div>}<div className="mt-3 rounded-xl bg-white/80 px-3 py-2 text-xs leading-5 text-slate-600"><strong className="text-emerald-800">Kho: 🩹 {aidInventory.cotton} · 💊 {aidInventory.medicine} · 💉 {aidInventory.injection}</strong><br/>Mỗi 5 câu đúng nhận 1 vật phẩm. Mốc tiếp theo: {nextAidMilestone} câu.</div><Button onClick={() => setAidOpen(true)} disabled={damage === 0 || gameOver || Object.values(aidInventory).every((count) => count === 0)} className="mt-3 w-full bg-emerald-600 font-bold hover:bg-emerald-700">🧰 Mở tủ cấp cứu</Button></div>
-          </div>}
           <div className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm"><p className="mb-3 text-sm font-bold">Danh sách câu</p><div className="grid grid-cols-5 gap-2">{questions.map((item, index) => { const done = isAnswerComplete(item, answers[item.id]); const marked = flagVault.some((saved) => saved.key === questionKey(item)); return <button aria-label={`Mở câu ${index + 1}`} key={item.id} onClick={() => setQuestionIndex(index)} className={`relative aspect-square rounded-xl text-sm font-bold transition ${questionIndex === index && !submitted ? 'ring-2 ring-sky-700 ring-offset-2' : ''} ${marked ? 'bg-indigo-400 text-white' : done ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-sky-100'}`}>{marked && <Flag className="absolute right-0.5 top-0.5 size-3" fill="currentColor"/>}{index + 1}</button>})}</div><div className="mt-4 grid gap-2 text-xs text-slate-600"><span><i className="mr-2 inline-block h-3 w-3 rounded-full bg-sky-500"/>Câu đã làm</span><span><i className="mr-2 inline-block h-3 w-3 rounded-full bg-slate-200"/>Câu chưa làm</span><span><i className="mr-2 inline-block h-3 w-3 rounded-full bg-indigo-400"/>Cờ đã lưu trong Vault</span></div></div>
           <div className="rounded-3xl border border-amber-100 bg-amber-50 p-5"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Sparkles className="size-5 text-amber-600"/><strong className="text-amber-950">Từ vựng của Vịt</strong></div><button onClick={() => setVocabulary(randomVocabulary(grade))} className="rounded-full p-2 text-amber-700 transition hover:bg-amber-100" aria-label="Đổi ba từ vựng"><RefreshCw className="size-4"/></button></div><div className="mt-3 grid gap-3">{vocabulary.map((item) => <div key={item.word} className="rounded-2xl bg-white p-3 shadow-sm"><strong className="text-sky-800">{item.word}</strong><span className="ml-2 text-sm text-amber-800">{item.meaning}</span><p className="mt-1 text-sm leading-5 text-slate-600">{item.example}</p></div>)}</div></div>
         </aside>
