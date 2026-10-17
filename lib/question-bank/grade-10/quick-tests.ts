@@ -133,7 +133,7 @@ function makeQuickTest(spec: QuickTestSpec): Exam {
     durationMinutes: 15,
     title: `English 10 · Kiểm tra 15 phút (${spec.units})`,
     theme: `${spec.units} · Reading & Writing · 15 phút`,
-    sourceNote: 'Bộ câu hỏi nguyên bản, được biên soạn theo cấu trúc bài kiểm tra thường xuyên; không sao chép ngữ liệu nguồn.',
+    sourceNote: 'Bộ câu hỏi nguyên bản, được biên soạn theo cấu trúc bài kiểm tra thường xuyên; chỉ giữ Reading và Writing, không gồm Listening hoặc Functional Speaking.',
     passageTitle: spec.passageTitle,
     passage: spec.passage.replace(/\[\[\d+\]\]/g, '_____'),
     questions: [reading, ...writing],
