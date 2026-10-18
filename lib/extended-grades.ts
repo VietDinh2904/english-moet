@@ -98,6 +98,25 @@ const pronunciations: { title: string; guidance: string; examples: string; optio
   { title: 'word stress', guidance: 'Listen for the strongest syllable and avoid stressing every syllable equally.', examples: 'TAble · reLAX · eduCAtion', options: ['teacher','student','table','today'], answer: 3 },
 ];
 
+const bundledIpa: Record<string, string> = {
+  classmate: '/ˈklɑːsmeɪt/',
+  timetable: '/ˈtaɪmteɪbl/',
+  laboratory: '/ləˈbɒrətri/',
+  creative: '/kriˈeɪtɪv/',
+  apartment: '/əˈpɑːtmənt/',
+  furniture: '/ˈfɜːnɪtʃə/',
+  cupboard: '/ˈkʌbəd/',
+  comfortable: '/ˈkʌmftəbl/',
+  generous: '/ˈdʒenərəs/',
+  patient: '/ˈpeɪʃnt/',
+  reliable: '/rɪˈlaɪəbl/',
+  appearance: '/əˈpɪərəns/',
+};
+
+function initialIpa(word: string) {
+  return bundledIpa[word.toLocaleLowerCase()] ?? '';
+}
+
 function question(id: number, skillArea: NonNullable<Question['skillArea']>, prompt: string, options: string[], answer: number | string | string[], explanation: string, extra: Partial<Question> = {}): Question {
   return { id, section: skillArea === 'Reading' ? 'Reading' : skillArea === 'Writing' ? 'Writing' : 'Language Focus', skillArea, prompt, options, answer, explanation, ...extra };
 }
@@ -142,7 +161,7 @@ function buildUnit(grade: ExtendedGrade, unit: number, seed: UnitSeed): { exam: 
   const distributed = distributeAnswers(questions, `extended-${grade}-${unit}`);
   const lesson: GrammarLesson = { unit, topics: [grammar], exercises: distributed.filter((item) => item.skillArea === 'Grammar').slice(0, 10) };
   const enrichment: UnitEnrichment = {
-    vocabulary: vocabulary.map(([word, vietnamese, , example, partOfSpeech]) => ({ word, ipa: '—', partOfSpeech: partOfSpeech ?? 'word', meaning: vietnamese, example })),
+    vocabulary: vocabulary.map(([word, vietnamese, , example, partOfSpeech]) => ({ word, ipa: initialIpa(word), partOfSpeech: partOfSpeech ?? 'word', meaning: vietnamese, example })),
     pronunciation: { ...pronunciation, explanation: `“${pronunciation.options[pronunciation.answer]}” contains the different target sound.`, prompt: 'Choose the word whose underlined part is pronounced differently.' },
   };
   return {
@@ -186,9 +205,36 @@ function sampleQuestions(exams: Exam[], predicate: (exam: Exam) => boolean, coun
   return distributeAnswers(picked, seed);
 }
 
-function assessment(grade: ExtendedGrade, id: number, menuGroup: NonNullable<Exam['menuGroup']>, label: string, exams: Exam[], predicate: (exam: Exam) => boolean, count = 40): Exam {
+function assessment(grade: ExtendedGrade, id: number, menuGroup: NonNullable<Exam['menuGroup']>, label: string, exams: Exam[], predicate: (exam: Exam) => boolean, count = 40, sourceNote?: string): Exam {
   const questions = sampleQuestions(exams, predicate, count, `${grade}-${menuGroup}-${id}`);
-  return { id, menuGroup, menuLabel: label, title: `English ${grade} · ${label}`, theme: 'Bài tổng hợp · Không gồm phần nghe', sourceNote: 'Bộ đề tổng hợp được tạo từ ngân hàng câu hỏi nguyên bản của website và tự động tránh câu trùng trong cùng một bài.', passageTitle: 'Integrated review', passage: 'Read each question carefully and use the vocabulary, grammar and reading strategies practised in the units.', questions };
+  return { id, menuGroup, menuLabel: label, title: `English ${grade} · ${label}`, theme: 'Bài tổng hợp · Không gồm Listening và Functional Speaking', sourceNote: sourceNote ?? 'Bộ đề tổng hợp được tạo từ ngân hàng câu hỏi nguyên bản của website và tự động tránh câu trùng trong cùng một bài.', passageTitle: 'Integrated review', passage: 'Read each question carefully and use the vocabulary, grammar and reading strategies practised in the units.', questions };
+}
+
+const publicCollectionCounts: Partial<Record<ExtendedGrade, Record<'midterm' | 'final' | 'midterm2' | 'final2', number>>> = {
+  6: { midterm: 9, final: 10, midterm2: 8, final2: 8 },
+  11: { midterm: 6, final: 8, midterm2: 7, final2: 7 },
+  12: { midterm: 7, final: 8, midterm2: 7, final2: 7 },
+};
+
+function referencedAssessments(grade: ExtendedGrade, unitExams: Exam[], split: number) {
+  const counts = publicCollectionCounts[grade];
+  if (!counts) return [
+    assessment(grade, grade * 1000 + 91, 'midterm', 'Giữa kỳ I · Đề tổng hợp', unitExams, (exam) => (exam.unit ?? 0) <= Math.ceil(split / 2)),
+    assessment(grade, grade * 1000 + 92, 'final', 'Cuối kỳ I · Đề tổng hợp', unitExams, (exam) => (exam.unit ?? 0) <= split),
+    assessment(grade, grade * 1000 + 93, 'midterm2', 'Giữa kỳ II · Đề tổng hợp', unitExams, (exam) => (exam.unit ?? 0) > split && (exam.unit ?? 0) <= split + Math.ceil((unitExams.length - split) / 2)),
+    assessment(grade, grade * 1000 + 94, 'final2', 'Cuối kỳ II · Đề tổng hợp', unitExams, () => true),
+  ];
+
+  const sourceNote = `Cấu trúc nhóm đề tham khảo bộ sưu tập công khai Loigiaihay English ${grade} Global Success. Toàn bộ câu hỏi trên website được biên soạn mới; đã loại Listening và Functional Speaking.`;
+  const definitions: { group: keyof typeof counts; label: string; predicate: (exam: Exam) => boolean; offset: number }[] = [
+    { group: 'midterm', label: 'Giữa kỳ I', predicate: (exam) => (exam.unit ?? 0) <= Math.ceil(split / 2), offset: 100 },
+    { group: 'final', label: 'Cuối kỳ I', predicate: (exam) => (exam.unit ?? 0) <= split, offset: 200 },
+    { group: 'midterm2', label: 'Giữa kỳ II', predicate: (exam) => (exam.unit ?? 0) > split && (exam.unit ?? 0) <= split + Math.ceil((unitExams.length - split) / 2), offset: 300 },
+    { group: 'final2', label: 'Cuối kỳ II', predicate: () => true, offset: 400 },
+  ];
+  return definitions.flatMap(({ group, label, predicate, offset }) => Array.from({ length: counts[group] }, (_, index) =>
+    assessment(grade, grade * 10000 + offset + index + 1, group, `${label} · Đề ${index + 1}`, unitExams, predicate, 40, sourceNote),
+  ));
 }
 
 const generated = Object.fromEntries((Object.keys(units) as unknown as ExtendedGrade[]).map((grade) => {
@@ -205,10 +251,7 @@ export const extendedExams = Object.fromEntries((Object.keys(generated) as unkno
   const split = Math.ceil(unitExams.length / 2);
   const extras = [
     assessment(grade, grade * 1000 + 90, 'review', 'Ôn tập tổng hợp', unitExams, () => true, 25),
-    assessment(grade, grade * 1000 + 91, 'midterm', 'Giữa kỳ I · Đề tổng hợp', unitExams, (exam) => (exam.unit ?? 0) <= Math.ceil(split / 2)),
-    assessment(grade, grade * 1000 + 92, 'final', 'Cuối kỳ I · Đề tổng hợp', unitExams, (exam) => (exam.unit ?? 0) <= split),
-    assessment(grade, grade * 1000 + 93, 'midterm2', 'Giữa kỳ II · Đề tổng hợp', unitExams, (exam) => (exam.unit ?? 0) > split && (exam.unit ?? 0) <= split + Math.ceil((unitExams.length - split) / 2)),
-    assessment(grade, grade * 1000 + 94, 'final2', 'Cuối kỳ II · Đề tổng hợp', unitExams, () => true),
+    ...referencedAssessments(grade, unitExams, split),
   ];
   return [grade, distributeExams([...unitExams, ...extras])];
 })) as Record<ExtendedGrade, Exam[]>;

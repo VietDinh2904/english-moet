@@ -1,8 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GrammarLesson as GrammarLessonData } from '@/lib/grammar-lessons9';
 import { unitEnrichment } from '@/lib/unit-enrichment';
+
+type DictionaryEntry = { phonetic?: string; phonetics?: { text?: string }[] };
+
+async function fetchIpa(word: string) {
+  const parts = word.split(/[ -]+/).filter(Boolean);
+  const phonetics = await Promise.all(parts.map(async (part) => {
+    try {
+      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(part)}`);
+      if (!response.ok) return part.toLocaleLowerCase();
+      const entries = await response.json() as DictionaryEntry[];
+      return entries[0]?.phonetic?.replaceAll('/', '') || entries[0]?.phonetics?.find((item) => item.text)?.text?.replaceAll('/', '') || part.toLocaleLowerCase();
+    } catch {
+      return part.toLocaleLowerCase();
+    }
+  }));
+  return `/${phonetics.join(' ')}/`;
+}
 
 export function GrammarLesson({ grade, lesson, vocabularyReviewed = false, onVocabularyReviewed }: { grade: 6 | 7 | 8 | 9 | 10 | 11 | 12; lesson: GrammarLessonData; vocabularyReviewed?: boolean; onVocabularyReviewed?: () => void }) {
   const unit = lesson.unit;
@@ -10,7 +27,25 @@ export function GrammarLesson({ grade, lesson, vocabularyReviewed = false, onVoc
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [wrongAttempts, setWrongAttempts] = useState<Record<number, number[]>>({});
-  if (!lesson) return null;
+  const [resolvedIpa, setResolvedIpa] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!enrichment) return;
+    let active = true;
+    const stored = (() => {
+      try { return JSON.parse(window.localStorage.getItem('english-moet-ipa-cache') ?? '{}') as Record<string, string>; }
+      catch { return {}; }
+    })();
+    const initial = Object.fromEntries(enrichment.vocabulary.map((item) => [item.word, item.ipa || stored[item.word] || 'Đang tải…']));
+    setResolvedIpa(initial);
+    const missing = enrichment.vocabulary.filter((item) => !item.ipa && !stored[item.word]);
+    void Promise.all(missing.map(async (item) => [item.word, await fetchIpa(item.word)] as const)).then((pairs) => {
+      if (!active || pairs.length === 0) return;
+      const updated = { ...stored, ...Object.fromEntries(pairs) };
+      setResolvedIpa((current) => ({ ...current, ...Object.fromEntries(pairs) }));
+      try { window.localStorage.setItem('english-moet-ipa-cache', JSON.stringify(updated)); } catch { /* cache is optional */ }
+    });
+    return () => { active = false; };
+  }, [enrichment]);
 
   const answered = Object.keys(answers).length;
   const question = lesson.exercises[questionIndex];
@@ -48,7 +83,7 @@ export function GrammarLesson({ grade, lesson, vocabularyReviewed = false, onVoc
           <table className="w-full min-w-[680px] border-collapse text-left text-sm sm:text-base">
             <thead className="bg-sky-50 text-sky-950"><tr><th className="px-4 py-3">Từ / phiên âm</th><th className="px-4 py-3">Từ loại</th><th className="px-4 py-3">Nghĩa</th><th className="px-4 py-3">Ví dụ</th></tr></thead>
             <tbody>{enrichment.vocabulary.map((item) => <tr key={item.word} className="border-t border-sky-100 align-top">
-              <td className="px-4 py-3"><strong lang="en" className="text-sky-950">{item.word}</strong><span className="mt-1 block text-sky-700">{item.ipa}</span></td>
+              <td className="px-4 py-3"><strong lang="en" className="text-sky-950">{item.word}</strong><span className="mt-1 block text-sky-700">{resolvedIpa[item.word] || item.ipa || 'Đang tải…'}</span></td>
               <td className="px-4 py-3 font-medium text-amber-900">{item.partOfSpeech ?? '—'}</td>
               <td className="px-4 py-3 text-slate-700">{item.meaning}</td>
               <td lang="en" className="px-4 py-3 text-slate-700">{item.example}</td>

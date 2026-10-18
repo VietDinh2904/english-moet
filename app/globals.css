@@ -204,6 +204,17 @@ body {
 }
 .food-penalty { animation: food-penalty 3s ease-in-out both; }
 
+@keyframes cat-letter-arrive {
+  0% { opacity: 0; transform: translateY(70px) scale(.25) rotate(-12deg); }
+  68% { opacity: 1; transform: translateY(-8px) scale(1.08) rotate(4deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+
+.cat-letter-tile {
+  animation: cat-letter-arrive 540ms cubic-bezier(.18,.88,.24,1.18) both;
+  transform-origin: center;
+}
+
 .effects-light .hit-flash { opacity: .28; }
 .effects-light .chicken-invade { filter: saturate(.8); }
 .effects-light .glass-crack { opacity: .58; }
@@ -211,7 +222,7 @@ body {
 .effects-off .chicken-invade, .effects-off .glass-crack { animation: none; opacity: .45; }
 
 @media (prefers-reduced-motion: reduce) {
-  .hit-flash, .chicken-invade, .glass-crack, .food-drop, .screen-blur, .agent-pop, .trex-pop, .trex-fullscreen, .food-penalty { animation-duration: 1ms; }
+  .hit-flash, .chicken-invade, .glass-crack, .food-drop, .screen-blur, .agent-pop, .trex-pop, .trex-fullscreen, .food-penalty, .cat-letter-tile { animation-duration: 1ms; }
 }
 
 /* Watercolour London study theme */
