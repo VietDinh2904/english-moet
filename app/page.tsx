@@ -1082,8 +1082,8 @@ export default function Home() {
   );
 
   return (
-    <main className={`min-h-screen bg-[#f7fbff] text-[#15324a] effects-${effectLevel}`}>
-      <header className="sticky top-0 z-30 border-b border-sky-100 bg-white/92 px-4 py-3 backdrop-blur-xl">
+    <main className={`watercolor-app min-h-screen text-[#19384d] effects-${effectLevel}`}>
+      <header className="watercolor-header sticky top-0 z-30 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <img src={grade === 8 ? 'duck-grade8-reading.png' : grade === 9 ? 'duck-grade9-explorer.png' : 'duck-learn.png'} alt={`Mascot vịt vàng English ${grade}`} className="h-12 w-12 rounded-xl object-cover object-top" />
@@ -1098,7 +1098,7 @@ export default function Home() {
       </header>
 
       <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[210px_minmax(0,1fr)_250px]">
-        <aside className="hidden self-start rounded-3xl border border-sky-100 bg-white p-4 shadow-sm lg:block">{examMenu}</aside>
+        <aside className="watercolor-paper hidden self-start p-4 lg:block">{examMenu}</aside>
 
         <section className="min-w-0" onContextMenu={openDictionary} onMouseUp={openDictionaryFromSelection}>
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -1130,7 +1130,7 @@ export default function Home() {
           <Progress value={(answeredCount / questions.length) * 100} className="mb-5 h-2.5" />
 
           {submitted ? (
-            <article className="overflow-hidden rounded-[28px] border border-sky-100 bg-white text-center shadow-[0_16px_50px_rgba(24,95,140,.08)]">
+            <article className="watercolor-card overflow-hidden text-center">
               <div className="bg-sky-600 px-6 py-8 text-white">{commandoUnlocked ? <><div aria-label="Huy hiệu Vịt Commando" className="mx-auto h-44 w-28 bg-no-repeat drop-shadow-xl" style={{ backgroundImage: 'url(duck-commando-ranks.png)', backgroundSize: '500% 100%', backgroundPosition: '100% center' }} /><span className="mt-2 inline-flex rounded-full bg-amber-300 px-4 py-1.5 text-sm font-black uppercase tracking-wider text-amber-950">Huy hiệu Vịt Commando</span></> : <img src="duck-celebrate.png" alt="Vịt nhỏ chúc mừng" className="mx-auto h-36 w-36 object-contain drop-shadow-lg"/>}<p className="mt-3 text-sm font-bold uppercase tracking-[.18em] text-sky-100">Đã hoàn thành English {grade} · {exam.menuLabel ?? `Đề ${exam.id}`}</p><h2 className="mt-2 text-4xl font-extrabold">{score}/{questions.length} câu đúng</h2></div>
               <div className="p-7">
                 <p className="text-lg text-slate-600">{score / questions.length >= 0.8 ? 'Xuất sắc! Vịt Nhỏ thấy bạn đã nắm bài rất chắc.' : score / questions.length >= 0.6 ? 'Làm tốt lắm! Xem lại vài câu sai là bạn sẽ tiến bộ nhanh.' : 'Mình cùng xem lại đáp án rồi thử lần nữa nhé.'}</p>
@@ -1170,7 +1170,7 @@ export default function Home() {
                 const previousItem = visibleIndex > 0 ? questions[visibleQuestionIndexes[visibleIndex - 1]] : undefined;
                 const showReadingPassage = item.section === 'Reading' && (!previousItem || previousItem.section !== 'Reading' || previousItem.passage !== item.passage || previousItem.passageTitle !== item.passageTitle);
                 const renderedQuestion = mode === 'survival' ? displayQuestion : item;
-                return <article key={item.id} className="rounded-[28px] border border-sky-100 bg-white p-5 shadow-[0_16px_50px_rgba(24,95,140,.08)] sm:p-8">
+                return <article key={item.id} className="watercolor-card p-5 sm:p-8">
                   <div className="mb-5 flex items-start justify-between gap-3"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">English {grade}</span>{(item.sourceUnit ?? exam.unit) && <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">Unit {item.sourceUnit ?? exam.unit}</span>}<span className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">{QUESTION_BANK_GROUPS.find(([group]) => group === exam.menuGroup)?.[1] ?? 'Bài luyện tập'}</span><span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">{item.skillArea ?? (item.section === 'Reading' ? 'Reading' : item.section === 'Writing' ? 'Writing' : 'Language Focus')}</span></div><button onClick={() => toggleFlag(item)} className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${itemFlagged ? 'bg-amber-100 text-amber-800' : 'text-slate-500 hover:bg-slate-50'}`}><Flag className="size-4" fill={itemFlagged ? 'currentColor' : 'none'}/> {itemFlagged ? 'Đã cắm cờ' : 'Cắm cờ'}</button></div>
                   {showReadingPassage && (item.passage ?? exam.passage) && <div className="mb-6 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-[15px] leading-7 text-slate-700"><strong className="mb-2 block text-amber-900">{item.passageTitle ?? exam.passageTitle}</strong>{item.passage ?? exam.passage}</div>}
                   <ExerciseQuestion question={renderedQuestion} questionNumber={itemIndex + 1} value={itemSelected} disabled={lockedQuestion === item.id || (mode === 'practice' && answers[item.id] !== undefined) || (mode === 'survival' && (bossPenalty?.kind === 'keyboard' || bossPenalty?.kind === 'screen-lock'))} practiceCorrect={mode === 'practice' && isQuestionCorrect(item, answers[item.id])} showCheck={mode === 'practice' || mode === 'survival'} progressiveHint={mode === 'practice' && itemIsTypedVocabulary ? itemHintText : undefined} hintMeaning={mode === 'practice' && itemIsTypedVocabulary ? itemHintMeaning : undefined} onRevealHint={mode === 'practice' && itemIsTypedVocabulary ? () => setVocabHintSteps((current) => ({ ...current, [itemKey]: Math.min(itemHintAnswer.length, itemHintStep + 1) })) : undefined} onChange={(value) => chooseAnswer(value, itemIndex)} onCheck={() => checkTypedAnswer(itemIndex)}/>
