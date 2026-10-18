@@ -43,7 +43,7 @@ export function correctAnswer(question: Question): string {
 }
 
 export function questionKey(question: Question): string {
-  return normalizeAnswer(`grade ${question.grade ?? 'unscoped'} ${question.kind ?? 'mcq'} ${question.prompt} ${question.template ?? ''} ${question.options.join(' ')}`)
+  return normalizeAnswer(`grade ${question.grade ?? 'unscoped'} unit ${question.sourceUnit ?? 'none'} source ${question.sourceExamId ?? 'none'} ${question.passageTitle ?? ''} ${question.kind ?? 'mcq'} ${question.prompt} ${question.template ?? ''} ${question.options.join(' ')}`)
     .replace(/\b(the|a|an)\b/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();

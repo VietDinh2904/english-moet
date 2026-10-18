@@ -152,12 +152,36 @@ function buildUnit(grade: ExtendedGrade, unit: number, seed: UnitSeed): { exam: 
   };
 }
 
+function contextualQuestion(exam: Exam, item: Question): Question {
+  return {
+    ...item,
+    sourceUnit: exam.unit,
+    sourceExamId: exam.id,
+    sourceExamTitle: exam.title,
+    sourceMenuGroup: exam.menuGroup,
+    passage: item.section === 'Reading' ? item.passage ?? exam.passage : item.passage,
+    passageTitle: item.section === 'Reading' ? item.passageTitle ?? exam.passageTitle : item.passageTitle,
+  };
+}
+
 function sampleQuestions(exams: Exam[], predicate: (exam: Exam) => boolean, count: number, seed: string) {
-  const source = exams.filter(predicate).flatMap((exam) => exam.questions);
+  const eligible = exams.filter(predicate);
+  const source = eligible.flatMap((exam) => exam.questions.map((item) => contextualQuestion(exam, item)));
   const picked: Question[] = [];
-  for (let offset = 0; picked.length < count && offset < source.length * 2; offset += 1) {
-    const candidate = source[(offset * 7 + seed.length * 3) % source.length];
-    if (!picked.some((item) => item.prompt === candidate.prompt && item.answer === candidate.answer)) picked.push({ ...candidate, id: picked.length + 1 });
+  const readingExam = eligible[(seed.length * 3) % Math.max(1, eligible.length)];
+  const readingGroup = readingExam
+    ? readingExam.questions.filter((item) => item.section === 'Reading').map((item) => contextualQuestion(readingExam, item))
+    : [];
+  const nonReading = source.filter((item) => item.section !== 'Reading');
+  const languageTarget = Math.max(0, count - readingGroup.length);
+  for (let offset = 0; picked.length < languageTarget && offset < nonReading.length * 2; offset += 1) {
+    const candidate = nonReading[(offset * 7 + seed.length * 3) % nonReading.length];
+    const sameSource = (item: Question) => item.sourceExamId === candidate.sourceExamId && item.prompt === candidate.prompt && item.answer === candidate.answer;
+    if (!picked.some(sameSource)) picked.push({ ...candidate, id: picked.length + 1 });
+  }
+  for (const item of readingGroup) {
+    if (picked.length >= count) break;
+    picked.push({ ...item, id: picked.length + 1 });
   }
   return distributeAnswers(picked, seed);
 }

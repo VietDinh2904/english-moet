@@ -71,7 +71,7 @@ export const examsByGrade: Record<GradeLevel, Exam[]> = {
 };
 
 function searchableText(exam: Exam, grade: GradeLevel) {
-  const questions = exam.questions.flatMap((question) => [question.prompt, question.template ?? '', question.skillArea ?? '', question.section, question.explanation, ...question.options]);
+  const questions = exam.questions.flatMap((question) => [question.prompt, question.template ?? '', question.skillArea ?? '', question.section, question.explanation, question.sourceUnit ? `Unit ${question.sourceUnit}` : '', question.sourceMenuGroup ?? '', question.passageTitle ?? '', ...question.options]);
   return [
     `English ${grade}`,
     exam.menuLabel ?? '',

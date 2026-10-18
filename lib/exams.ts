@@ -1,7 +1,14 @@
+export type ExamMenuGroup = 'review' | 'survey' | 'quick-test' | 'midterm' | 'final' | 'midterm2' | 'final2' | 'unit';
+
 export type Question = {
   id: number;
   /** Grade namespace used to keep randomisation, history and saved questions isolated. */
   grade?: number;
+  /** Original unit and collection metadata retained when a question is reused in an assessment. */
+  sourceUnit?: number;
+  sourceExamId?: number;
+  sourceExamTitle?: string;
+  sourceMenuGroup?: ExamMenuGroup;
   section: 'Language Focus' | 'Reading' | 'Writing';
   skillArea?: 'Pronunciation' | 'Vocabulary' | 'Grammar' | 'Reading' | 'Writing' | 'Looking Back';
   prompt: string;
@@ -31,7 +38,7 @@ export type Exam = {
   bookLabel?: 'Bộ cũ' | 'Bộ mới';
   skipEnrichment?: boolean;
   menuLabel?: string;
-  menuGroup?: 'review' | 'survey' | 'quick-test' | 'midterm' | 'final' | 'midterm2' | 'final2' | 'unit';
+  menuGroup?: ExamMenuGroup;
   durationMinutes?: number;
   title: string;
   theme: string;
