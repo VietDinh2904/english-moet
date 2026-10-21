@@ -229,6 +229,8 @@ body {
 .watercolor-app {
   position: relative;
   isolation: isolate;
+  max-width: 100%;
+  overflow-x: clip;
   background-color: #f7f3e9;
   background-image:
     linear-gradient(90deg, rgba(250, 247, 238, .78), rgba(255, 253, 247, .9) 24%, rgba(255, 253, 247, .94) 76%, rgba(250, 247, 238, .78)),
@@ -272,6 +274,8 @@ body {
 .watercolor-paper,
 .watercolor-card {
   position: relative;
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid rgba(85, 135, 153, .3);
   border-radius: 30px 22px 32px 24px;
   background:
@@ -284,6 +288,20 @@ body {
     inset 0 0 0 3px rgba(255, 255, 255, .62),
     inset 12px 0 28px rgba(104, 174, 200, .04);
   backdrop-filter: blur(12px) saturate(.88);
+}
+
+.watercolor-app :where(section, article, aside, nav, header, div) {
+  min-width: 0;
+}
+
+.watercolor-card,
+.watercolor-paper,
+.watercolor-app dialog {
+  overflow-wrap: anywhere;
+}
+
+.watercolor-app dialog[open] > * {
+  max-width: 100%;
 }
 
 .watercolor-card::after,

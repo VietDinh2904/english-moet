@@ -1048,7 +1048,7 @@ export default function Home() {
 
   const renderExamButton = (item: (typeof availableExams)[number], index: number) => (
     <button key={item.id} onClick={() => selectExam(index)} className={`group rounded-2xl px-3 py-2.5 text-left transition ${index === examIndex ? 'bg-sky-600 text-white shadow-md shadow-sky-100' : 'bg-sky-50 text-[#15324a] hover:bg-sky-100'}`}>
-      <span className="flex items-start justify-between gap-2"><b>{item.menuLabel ?? `Đề số ${item.id}`}</b><small className={`shrink-0 rounded-full px-2 py-0.5 font-bold ${index === examIndex ? 'bg-white/20 text-white' : 'bg-white text-sky-700'}`}>{item.questions.length} câu</small></span>
+      <span className="flex min-w-0 items-start justify-between gap-2"><b className="min-w-0 break-words">{item.menuLabel ?? `Đề số ${item.id}`}</b><small className={`shrink-0 rounded-full px-2 py-0.5 font-bold ${index === examIndex ? 'bg-white/20 text-white' : 'bg-white text-sky-700'}`}>{item.questions.length} câu</small></span>
       {item.bookLabel && <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${index === examIndex ? 'bg-white/20 text-white' : item.bookLabel === 'Bộ mới' ? 'bg-amber-100 text-amber-800' : 'bg-white text-slate-500'}`}>{item.bookLabel}</span>}
     </button>
   );
@@ -1113,12 +1113,12 @@ export default function Home() {
   return (
     <main className={`watercolor-app min-h-screen text-[#19384d] effects-${effectLevel}`}>
       <header className="watercolor-header sticky top-0 z-30 px-4 py-3 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <img src={grade === 8 ? 'duck-grade8-reading.png' : grade === 9 ? 'duck-grade9-explorer.png' : 'duck-learn.png'} alt={`Mascot vịt vàng English ${grade}`} className="h-12 w-12 rounded-xl object-cover object-top" />
-            <div><strong className="block text-lg leading-tight">English MOET</strong><span className="hidden text-sm text-slate-500 sm:block">English {grade} · Học chắc, luyện đúng dạng</span></div>
+            <div className="hidden min-[440px]:block"><strong className="block text-lg leading-tight">English MOET</strong><span className="hidden text-sm text-slate-500 sm:block">English {grade} · Học chắc, luyện đúng dạng</span></div>
           </div>
-          <div className="flex max-w-[58vw] overflow-x-auto rounded-2xl border border-sky-100 bg-sky-50 p-1 sm:max-w-[68vw]" aria-label="Chọn khối lớp">
+          <div className="flex min-w-0 flex-1 overflow-x-auto rounded-2xl border border-sky-100 bg-sky-50 p-1 sm:max-w-[68vw]" aria-label="Chọn khối lớp">
             {([6, 7, 8, 9, 10, 11, 12] as GradeLevel[]).map((item) => <button key={item} onClick={() => switchGrade(item)} className={`shrink-0 rounded-xl px-2 py-2 text-xs font-extrabold transition sm:px-3 sm:text-sm ${grade === item ? 'bg-sky-600 text-white shadow-sm' : 'text-sky-800 hover:bg-white'}`} aria-pressed={grade === item}>English {item}</button>)}
           </div>
           <span className="hidden rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800 xl:inline">{availableExams.length} mục học · {availableExams.reduce((total, item) => total + item.questions.length, 0)} câu</span>
@@ -1211,7 +1211,7 @@ export default function Home() {
           )}
         </section>
 
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
           {mode === 'survival' ? <div className={`overflow-hidden rounded-3xl p-5 text-white shadow-lg ${isBossStage ? 'bg-gradient-to-br from-rose-800 to-slate-950' : 'bg-gradient-to-br from-sky-600 via-cyan-700 to-slate-900'}`}>
             <div className="flex items-center justify-between"><span className="font-black uppercase tracking-wider">Survival · Màn {survivalStage + 1}</span><Clock3 className="size-5 text-white"/></div>
             <strong suppressHydrationWarning className="mt-2 block font-mono text-4xl tracking-tight">{formatTime(secondsLeft)}</strong>
