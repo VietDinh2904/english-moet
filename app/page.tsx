@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { Archive, BookOpen, BookMarked, ChevronDown, ChevronLeft, ChevronRight, Clock3, Coins, Flag, Languages, MapPinned, Menu, PackageOpen, RefreshCw, RotateCcw, Search, Settings2, ShoppingBag, Sparkles, Target, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -296,6 +296,7 @@ function readSeenQuestions() {
 
 export default function Home() {
   const [grade, setGrade] = useState<GradeLevel>(8);
+  const gradeTabsRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<ExamMode>('practice');
   const [examIndex, setExamIndex] = useState(0);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -407,6 +408,11 @@ export default function Home() {
     : '';
   const currentWrongAttempt = wrongAttempts[question.id] ?? 1;
   const thirdWrongPunishment = DUCK_PUNISHMENTS[Math.abs(question.id + currentWrongAttempt) % DUCK_PUNISHMENTS.length];
+
+  useEffect(() => {
+    const activeGrade = gradeTabsRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    activeGrade?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'auto' });
+  }, [grade]);
 
   useEffect(() => {
     try {
@@ -1118,7 +1124,7 @@ export default function Home() {
             <img src={grade === 8 ? 'duck-grade8-reading.png' : grade === 9 ? 'duck-grade9-explorer.png' : 'duck-learn.png'} alt={`Mascot vịt vàng English ${grade}`} className="h-12 w-12 rounded-xl object-cover object-top" />
             <div className="hidden min-[440px]:block"><strong className="block text-lg leading-tight">English MOET</strong><span className="hidden text-sm text-slate-500 sm:block">English {grade} · Học chắc, luyện đúng dạng</span></div>
           </div>
-          <div className="flex min-w-0 flex-1 overflow-x-auto rounded-2xl border border-sky-100 bg-sky-50 p-1 sm:max-w-[68vw]" aria-label="Chọn khối lớp">
+          <div ref={gradeTabsRef} className="flex min-w-0 flex-1 overflow-x-auto rounded-2xl border border-sky-100 bg-sky-50 p-1 sm:max-w-[68vw]" aria-label="Chọn khối lớp">
             {([6, 7, 8, 9, 10, 11, 12] as GradeLevel[]).map((item) => <button key={item} onClick={() => switchGrade(item)} className={`shrink-0 rounded-xl px-2 py-2 text-xs font-extrabold transition sm:px-3 sm:text-sm ${grade === item ? 'bg-sky-600 text-white shadow-sm' : 'text-sky-800 hover:bg-white'}`} aria-pressed={grade === item}>English {item}</button>)}
           </div>
           <span className="hidden rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800 xl:inline">{availableExams.length} mục học · {availableExams.reduce((total, item) => total + item.questions.length, 0)} câu</span>
