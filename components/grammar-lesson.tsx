@@ -79,14 +79,15 @@ export function GrammarLesson({ grade, lesson, vocabularyReviewed = false, onVoc
       </section>}
       {enrichment && <section className="overflow-hidden rounded-2xl border border-sky-100 bg-white">
         <div className="border-b border-sky-100 px-4 py-4 sm:px-5"><h2 className="text-lg font-bold text-sky-900">Từ vựng cốt lõi</h2></div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] border-collapse text-left text-sm sm:text-base">
+        <div className="max-w-full overflow-x-auto [scrollbar-gutter:stable]">
+          <table className="w-full min-w-[560px] table-fixed border-collapse text-left text-sm sm:text-base">
+            <colgroup><col className="w-[20%]"/><col className="w-[18%]"/><col className="w-[26%]"/><col className="w-[36%]"/></colgroup>
             <thead className="bg-sky-50 text-sky-950"><tr><th className="px-4 py-3">Từ / phiên âm</th><th className="px-4 py-3">Từ loại</th><th className="px-4 py-3">Nghĩa</th><th className="px-4 py-3">Ví dụ</th></tr></thead>
             <tbody>{enrichment.vocabulary.map((item) => <tr key={item.word} className="border-t border-sky-100 align-top">
-              <td className="px-4 py-3"><strong lang="en" className="text-sky-950">{item.word}</strong><span className="mt-1 block text-sky-700">{resolvedIpa[item.word] || item.ipa || 'Đang tải…'}</span></td>
-              <td className="px-4 py-3 font-medium text-amber-900">{item.partOfSpeech ?? '—'}</td>
-              <td className="px-4 py-3 text-slate-700">{item.meaning}</td>
-              <td lang="en" className="px-4 py-3 text-slate-700">{item.example}</td>
+              <td className="break-words px-4 py-3"><strong lang="en" className="text-sky-950">{item.word}</strong><span className="mt-1 block break-all text-sky-700">{resolvedIpa[item.word] || item.ipa || 'Đang tải…'}</span></td>
+              <td className="break-words px-4 py-3 font-medium text-amber-900">{item.partOfSpeech ?? '—'}</td>
+              <td className="break-words px-4 py-3 text-slate-700">{item.meaning}</td>
+              <td lang="en" className="break-words px-4 py-3 text-slate-700">{item.example}</td>
             </tr>)}</tbody>
           </table>
         </div>
