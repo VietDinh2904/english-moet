@@ -40,6 +40,8 @@ type LoadoutItem = { id: string; name: string; slot: LoadoutSlot; icon: string; 
 type CatLetter = { id: number; letter: string; x: number; y: number; size: number; rotate: number; delay: number };
 
 const STARTER_AID: AidInventory = { cotton: 0, medicine: 0, injection: 0 };
+const OPEN_GRADES: GradeLevel[] = [8, 10];
+const OPEN_EXAM_GROUPS: MenuGroup[] = ['midterm', 'final', 'midterm2', 'final2'];
 const AID_ITEMS: { kind: AidKind; name: string; icon: string; heal: number; color: string }[] = [
   { kind: 'cotton', name: 'Bông băng', icon: '🩹', heal: 1, color: 'border-sky-200 bg-sky-50 text-sky-900' },
   { kind: 'medicine', name: 'Thuốc hồi phục', icon: '💊', heal: 2, color: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
@@ -152,7 +154,7 @@ function capMultipleChoiceOptions(question: Question): Question {
   return { ...question, options, answer };
 }
 
-function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, targetCount: number, seenBefore: Set<string>, grade: GradeLevel, pinnedKey?: string | null, excludeTypedVocabulary = false, selectionOnly = false, reviewedVocabularyExamIds: Set<number> = new Set(), excludeLookingBack = false) {
+function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, targetCount: number, seenBefore: Set<string>, grade: GradeLevel, pinnedKey?: string | null, excludeTypedVocabulary = false, selectionOnly = false, reviewedVocabularyExamIds: Set<number> = new Set(), excludeLookingBack = false, mcqOnly = false) {
   const sourceEntries = allExams.map((source, sourceIndex) => ({ source, sourceIndex })).filter(({ source }) => exam.menuGroup === 'unit'
     ? source.menuGroup === 'unit' && source.unit === exam.unit
     : source.id === exam.id);
@@ -168,6 +170,7 @@ function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, ta
     sourceIndex,
     fromNewBook: source.bookLabel === 'Bộ mới',
   }))).filter((question) => !(excludeTypedVocabulary && isTypedVocabularyQuestion(question)))
+    .filter((question) => !(mcqOnly && (question.kind === 'typed' || question.kind === 'cloze-dropdown' || typeof question.answer !== 'number' || question.options.length < 4)))
     .filter((question) => !(exam.menuGroup === 'unit' && question.skillArea === 'Vocabulary' && !question.fromNewBook))
     .filter((question) => !isDirectVocabularyMeaningQuestion(question))
     .filter((question) => !(selectionOnly && (question.kind === 'typed' || question.kind === 'cloze-dropdown' || question.options.length < 2)))
@@ -355,7 +358,7 @@ export default function Home() {
   const [bankSearch, setBankSearch] = useState('');
   const [bankGroup, setBankGroup] = useState<MenuGroup | 'all'>('all');
   const [bankSort, setBankSort] = useState<QuestionBankSort>('curriculum');
-  const availableExams = examsByGrade[grade];
+  const availableExams = useMemo(() => examsByGrade[grade].filter((item) => item.menuGroup && OPEN_EXAM_GROUPS.includes(item.menuGroup)), [grade]);
   const bankResults = useMemo(() => filterQuestionBank(availableExams, grade, bankSearch, bankGroup, bankSort), [availableExams, bankGroup, bankSearch, bankSort, grade]);
   const exam = availableExams[examIndex];
   const selectedUnit = unitNumber(exam, grade);
@@ -365,7 +368,7 @@ export default function Home() {
       : grade === 8 ? grammarLessons8[selectedUnit] : grade === 9 ? grammarLessons9[selectedUnit] : grammarLessons10[selectedUnit]
     : undefined;
   const reviewedVocabularyExamIds = useMemo(() => new Set(availableExams.filter((item) => reviewedVocabularyKeys.includes(`${grade}-${item.id}`)).map((item) => item.id)), [availableExams, grade, reviewedVocabularyKeys]);
-  const questions = useMemo(() => buildMixedQuestions(exam, availableExams, examIndex, mode === 'practice' ? exam.questions.length : 40, seenAtSelection, grade, focusQuestionKey, mode === 'test', mode === 'survival', reviewedVocabularyExamIds, mode === 'test'), [availableExams, exam, examIndex, focusQuestionKey, grade, mode, reviewedVocabularyExamIds, seenAtSelection]);
+  const questions = useMemo(() => buildMixedQuestions(exam, availableExams, examIndex, mode === 'practice' ? exam.questions.length : 40, seenAtSelection, grade, focusQuestionKey, mode === 'test', mode === 'survival', reviewedVocabularyExamIds, mode === 'test', true), [availableExams, exam, examIndex, focusQuestionKey, grade, mode, reviewedVocabularyExamIds, seenAtSelection]);
   const question = questions[questionIndex];
   const questionPages = useMemo(() => buildQuestionPages(questions), [questions]);
   const currentPageIndex = mode === 'survival' ? 0 : Math.max(0, questionPages.findIndex((page) => page.includes(questionIndex)));
@@ -589,6 +592,8 @@ export default function Home() {
   }, [availableExams, mode]);
 
   const switchGrade = (nextGrade: GradeLevel) => {
+    if (!OPEN_GRADES.includes(nextGrade)) return;
+    const nextAvailableExams = examsByGrade[nextGrade].filter((item) => item.menuGroup && OPEN_EXAM_GROUPS.includes(item.menuGroup));
     setSeenAtSelection(readSeenQuestions());
     setFocusQuestionKey(null);
     setGrade(nextGrade);
@@ -600,7 +605,7 @@ export default function Home() {
     setHintOpen(false);
     setFlagged([]);
     setSubmitted(false);
-    setSecondsLeft(mode === 'survival' ? 2 * 60 : (examsByGrade[nextGrade][0]?.durationMinutes ?? 60) * 60);
+    setSecondsLeft(mode === 'survival' ? 2 * 60 : (nextAvailableExams[0]?.durationMinutes ?? 60) * 60);
     setDictionary(null);
     setWrongAttempts({});
     setDamage(0);
@@ -1060,6 +1065,7 @@ export default function Home() {
   );
 
   const menuGroups = QUESTION_BANK_GROUPS.filter(([group]) => availableExams.some((item) => item.menuGroup === group));
+  const lockedMenuGroups = QUESTION_BANK_GROUPS.filter(([group]) => !OPEN_EXAM_GROUPS.includes(group) && examsByGrade[grade].some((item) => item.menuGroup === group));
 
   const examMenu = (
     <div>
@@ -1111,6 +1117,10 @@ export default function Home() {
             </div>
           </details>;
         })}
+        {lockedMenuGroups.length > 0 && <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-100/80 p-3 text-slate-500">
+          <p className="mb-2 text-xs font-black uppercase tracking-[.14em]">🔒 Tạm khóa</p>
+          <div className="grid gap-2">{lockedMenuGroups.map(([group, label]) => <div key={group} className="flex items-center justify-between rounded-xl bg-white/70 px-3 py-2 text-sm font-semibold"><span>{label}</span><span aria-hidden="true">🔒</span></div>)}</div>
+        </div>}
         {bankResults.length === 0 && <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50 px-3 py-5 text-center text-sm text-slate-600"><Search className="mx-auto mb-2 size-5 text-sky-500"/><strong className="block text-slate-800">Không tìm thấy bài phù hợp</strong><button onClick={() => { setBankSearch(''); setBankGroup('all'); }} className="mt-2 font-bold text-sky-700 hover:underline">Xóa bộ lọc</button></div>}
       </nav>
     </div>
@@ -1125,7 +1135,7 @@ export default function Home() {
             <div className="hidden min-[440px]:block"><strong className="block text-lg leading-tight">English MOET</strong><span className="hidden text-sm text-slate-500 sm:block">English {grade} · Học chắc, luyện đúng dạng</span></div>
           </div>
           <div ref={gradeTabsRef} className="flex min-w-0 flex-1 overflow-x-auto rounded-2xl border border-sky-100 bg-sky-50 p-1 sm:max-w-[68vw]" aria-label="Chọn khối lớp">
-            {([6, 7, 8, 9, 10, 11, 12] as GradeLevel[]).map((item) => <button key={item} onClick={() => switchGrade(item)} className={`shrink-0 rounded-xl px-2 py-2 text-xs font-extrabold transition sm:px-3 sm:text-sm ${grade === item ? 'bg-sky-600 text-white shadow-sm' : 'text-sky-800 hover:bg-white'}`} aria-pressed={grade === item}>English {item}</button>)}
+            {([6, 7, 8, 9, 10, 11, 12] as GradeLevel[]).map((item) => { const unlocked = OPEN_GRADES.includes(item); return <button key={item} onClick={() => switchGrade(item)} disabled={!unlocked} className={`shrink-0 rounded-xl px-2 py-2 text-xs font-extrabold transition sm:px-3 sm:text-sm ${grade === item ? 'bg-sky-600 text-white shadow-sm' : unlocked ? 'text-sky-800 hover:bg-white' : 'cursor-not-allowed bg-slate-100/80 text-slate-400'}`} aria-pressed={grade === item} aria-label={unlocked ? `English ${item}` : `English ${item} đang tạm khóa`}>{!unlocked && <span aria-hidden="true">🔒 </span>}English {item}</button>; })}
           </div>
           <span className="hidden rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800 xl:inline">{availableExams.length} mục học · {availableExams.reduce((total, item) => total + item.questions.length, 0)} câu</span>
           <Sheet><SheetTrigger render={<Button variant="outline" size="icon" className="lg:hidden" aria-label="Mở danh sách đề" />}><Menu /></SheetTrigger><SheetContent side="left"><SheetTitle className="mb-5">Chọn đề</SheetTitle>{examMenu}</SheetContent></Sheet>
@@ -1136,6 +1146,7 @@ export default function Home() {
         <aside className="watercolor-paper hidden self-start p-4 lg:block">{examMenu}</aside>
 
         <section className="min-w-0" onContextMenu={openDictionary} onMouseUp={openDictionaryFromSelection}>
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-950">🔒 Chế độ tạm thời: chỉ mở đề giữa kỳ và cuối kỳ của lớp 8, lớp 10. Mỗi lượt chỉ lấy ngẫu nhiên câu MCQ có 4 lựa chọn.</div>
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div><p className="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-sky-700"><BookOpen className="size-4"/> English {grade} · {question.section}</p><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{exam.title}</h1></div>
             <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold shadow-sm">Trang {currentPageIndex + 1} / {questionPages.length}</span>
