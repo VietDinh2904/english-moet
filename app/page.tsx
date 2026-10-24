@@ -154,7 +154,7 @@ function capMultipleChoiceOptions(question: Question): Question {
   return { ...question, options, answer };
 }
 
-function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, targetCount: number, seenBefore: Set<string>, grade: GradeLevel, pinnedKey?: string | null, excludeTypedVocabulary = false, selectionOnly = false, reviewedVocabularyExamIds: Set<number> = new Set(), excludeLookingBack = false, mcqOnly = false) {
+function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, targetCount: number, seenBefore: Set<string>, grade: GradeLevel, pinnedKey?: string | null, excludeTypedVocabulary = false, selectionOnly = false, reviewedVocabularyExamIds: Set<number> = new Set(), excludeLookingBack = false) {
   const sourceEntries = allExams.map((source, sourceIndex) => ({ source, sourceIndex })).filter(({ source }) => exam.menuGroup === 'unit'
     ? source.menuGroup === 'unit' && source.unit === exam.unit
     : source.id === exam.id);
@@ -170,7 +170,6 @@ function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, ta
     sourceIndex,
     fromNewBook: source.bookLabel === 'Bộ mới',
   }))).filter((question) => !(excludeTypedVocabulary && isTypedVocabularyQuestion(question)))
-    .filter((question) => !(mcqOnly && (question.kind === 'typed' || question.kind === 'cloze-dropdown' || typeof question.answer !== 'number' || question.options.length < 4)))
     .filter((question) => !(exam.menuGroup === 'unit' && question.skillArea === 'Vocabulary' && !question.fromNewBook))
     .filter((question) => !isDirectVocabularyMeaningQuestion(question))
     .filter((question) => !(selectionOnly && (question.kind === 'typed' || question.kind === 'cloze-dropdown' || question.options.length < 2)))
@@ -270,26 +269,17 @@ function practiceHint(question: Question) {
   return 'Tìm dấu hiệu thì, từ loại, chủ ngữ và cấu trúc ngữ pháp chính trước khi chọn đáp án.';
 }
 
-function buildQuestionPages(questions: Question[], pageSize = 10) {
-  const pages: number[][] = [];
-  let page: number[] = [];
-  let index = 0;
-  const flush = () => { if (page.length) pages.push(page); page = []; };
-  while (index < questions.length) {
-    if (questions[index].section === 'Reading') {
-      const passageKey = `${questions[index].passageTitle ?? ''}|${questions[index].passage ?? ''}`;
-      const group: number[] = [];
-      while (index < questions.length && questions[index].section === 'Reading' && `${questions[index].passageTitle ?? ''}|${questions[index].passage ?? ''}` === passageKey) group.push(index++);
-      if (page.length && page.length + group.length > pageSize) flush();
-      page.push(...group);
-      if (page.length >= pageSize) flush();
-      continue;
-    }
-    page.push(index++);
-    if (page.length >= pageSize) flush();
-  }
-  flush();
-  return pages;
+function buildQuestionPages(questions: Question[]) {
+  const exerciseGroups = new Map<string, number[]>();
+  questions.forEach((question, index) => {
+    const groupKey = question.section === 'Reading'
+      ? `Reading|${question.passageTitle ?? ''}|${question.passage ?? ''}`
+      : `${question.section}|${question.skillArea ?? question.section}`;
+    const group = exerciseGroups.get(groupKey) ?? [];
+    group.push(index);
+    exerciseGroups.set(groupKey, group);
+  });
+  return [...exerciseGroups.values()];
 }
 
 function readSeenQuestions() {
@@ -368,7 +358,7 @@ export default function Home() {
       : grade === 8 ? grammarLessons8[selectedUnit] : grade === 9 ? grammarLessons9[selectedUnit] : grammarLessons10[selectedUnit]
     : undefined;
   const reviewedVocabularyExamIds = useMemo(() => new Set(availableExams.filter((item) => reviewedVocabularyKeys.includes(`${grade}-${item.id}`)).map((item) => item.id)), [availableExams, grade, reviewedVocabularyKeys]);
-  const questions = useMemo(() => buildMixedQuestions(exam, availableExams, examIndex, mode === 'practice' ? exam.questions.length : 40, seenAtSelection, grade, focusQuestionKey, mode === 'test', mode === 'survival', reviewedVocabularyExamIds, mode === 'test', true), [availableExams, exam, examIndex, focusQuestionKey, grade, mode, reviewedVocabularyExamIds, seenAtSelection]);
+  const questions = useMemo(() => buildMixedQuestions(exam, availableExams, examIndex, mode === 'practice' ? exam.questions.length : 40, seenAtSelection, grade, focusQuestionKey, mode === 'test', mode === 'survival', reviewedVocabularyExamIds, mode === 'test'), [availableExams, exam, examIndex, focusQuestionKey, grade, mode, reviewedVocabularyExamIds, seenAtSelection]);
   const question = questions[questionIndex];
   const questionPages = useMemo(() => buildQuestionPages(questions), [questions]);
   const currentPageIndex = mode === 'survival' ? 0 : Math.max(0, questionPages.findIndex((page) => page.includes(questionIndex)));
@@ -1146,14 +1136,14 @@ export default function Home() {
         <aside className="watercolor-paper hidden self-start p-4 lg:block">{examMenu}</aside>
 
         <section className="min-w-0" onContextMenu={openDictionary} onMouseUp={openDictionaryFromSelection}>
-          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-950">🔒 Chế độ tạm thời: chỉ mở đề giữa kỳ và cuối kỳ của lớp 8, lớp 10. Mỗi lượt chỉ lấy ngẫu nhiên câu MCQ có 4 lựa chọn.</div>
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-950">🔒 Chế độ tạm thời: chỉ mở đề giữa kỳ và cuối kỳ của lớp 8, lớp 10. Các câu MCQ được lấy và đảo ngẫu nhiên; mỗi lần hiển thị trọn một mục bài.</div>
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div><p className="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-sky-700"><BookOpen className="size-4"/> English {grade} · {question.section}</p><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{exam.title}</h1></div>
-            <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold shadow-sm">Trang {currentPageIndex + 1} / {questionPages.length}</span>
+            <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold shadow-sm">Mục {currentPageIndex + 1} / {questionPages.length}</span>
           </div>
           <div className="mb-3 grid gap-2 text-sm sm:grid-cols-2">
-            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sky-950"><strong>Luyện tập:</strong> 10 câu mỗi trang, câu nào cũng có Hint. Sai lần 1 xem gợi ý; lần 2 khóa 10 giây; từ lần 3 khóa 20 giây. Bôi đen tiếng Anh để tự bật nghĩa.</div>
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700"><strong>Làm bài test:</strong> 10 câu mỗi trang; {questions.length} câu trong {exam.durationMinutes ?? 60} phút. Làm đủ và nộp bài mới xem đáp án, lời giải.</div>
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sky-950"><strong>Luyện tập:</strong> Hiển thị trọn từng mục bài, câu nào cũng có Hint. Sai lần 1 xem gợi ý; lần 2 khóa 10 giây; từ lần 3 khóa 20 giây. Bôi đen tiếng Anh để tự bật nghĩa.</div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700"><strong>Làm bài test:</strong> Mỗi lần mở trọn một mục bài; {questions.length} câu trong {exam.durationMinutes ?? 60} phút. Làm đủ và nộp bài mới xem đáp án, lời giải.</div>
           </div>
           <div className="mb-5 grid grid-cols-2 rounded-2xl border border-sky-100 bg-white p-1.5 shadow-sm">
             <button onClick={() => switchMode('practice')} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${mode === 'practice' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:bg-sky-50'}`}>Luyện tập</button>
@@ -1223,7 +1213,7 @@ export default function Home() {
                 </article>;
               })}
               </div>
-              {mode !== 'survival' && <nav className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm" aria-label="Phân trang câu hỏi"><Button variant="outline" disabled={currentPageIndex === 0} onClick={() => setQuestionIndex(questionPages[currentPageIndex - 1]?.[0] ?? 0)} className="rounded-xl"><ChevronLeft/> 10 câu trước</Button><strong className="text-sm text-slate-600">Câu {(visibleQuestionIndexes[0] ?? 0) + 1}–{(visibleQuestionIndexes.at(-1) ?? 0) + 1} / {questions.length}</strong>{currentPageIndex === questionPages.length - 1 ? <Button disabled={!canSubmit} onClick={submitExam} className="rounded-xl bg-[#123c5a] px-5 hover:bg-[#0e3048]">{mode === 'test' ? 'Nộp bài' : 'Xem tổng kết'}</Button> : <Button onClick={() => setQuestionIndex(questionPages[currentPageIndex + 1]?.[0] ?? questionIndex)} className="rounded-xl bg-sky-600 px-5 hover:bg-sky-700">10 câu tiếp <ChevronRight/></Button>}</nav>}
+              {mode !== 'survival' && <nav className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm" aria-label="Chuyển mục bài"><Button variant="outline" disabled={currentPageIndex === 0} onClick={() => setQuestionIndex(questionPages[currentPageIndex - 1]?.[0] ?? 0)} className="rounded-xl"><ChevronLeft/> Mục trước</Button><strong className="text-sm text-slate-600">Mục {currentPageIndex + 1}/{questionPages.length} · {visibleQuestionIndexes.length} câu</strong>{currentPageIndex === questionPages.length - 1 ? <Button disabled={!canSubmit} onClick={submitExam} className="rounded-xl bg-[#123c5a] px-5 hover:bg-[#0e3048]">{mode === 'test' ? 'Nộp bài' : 'Xem tổng kết'}</Button> : <Button onClick={() => setQuestionIndex(questionPages[currentPageIndex + 1]?.[0] ?? questionIndex)} className="rounded-xl bg-sky-600 px-5 hover:bg-sky-700">Mục tiếp <ChevronRight/></Button>}</nav>}
             </div>
           )}
         </section>
