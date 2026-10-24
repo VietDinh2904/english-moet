@@ -42,6 +42,7 @@ type CatLetter = { id: number; letter: string; x: number; y: number; size: numbe
 const STARTER_AID: AidInventory = { cotton: 0, medicine: 0, injection: 0 };
 const OPEN_GRADES: GradeLevel[] = [8, 10];
 const OPEN_EXAM_GROUPS: MenuGroup[] = ['midterm', 'final', 'midterm2', 'final2'];
+const PRACTICE_MODE_ENABLED = false;
 const AID_ITEMS: { kind: AidKind; name: string; icon: string; heal: number; color: string }[] = [
   { kind: 'cotton', name: 'Bông băng', icon: '🩹', heal: 1, color: 'border-sky-200 bg-sky-50 text-sky-900' },
   { kind: 'medicine', name: 'Thuốc hồi phục', icon: '💊', heal: 2, color: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
@@ -290,7 +291,7 @@ function readSeenQuestions() {
 export default function Home() {
   const [grade, setGrade] = useState<GradeLevel>(8);
   const gradeTabsRef = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<ExamMode>('practice');
+  const [mode, setMode] = useState<ExamMode>('test');
   const [examIndex, setExamIndex] = useState(0);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
@@ -627,6 +628,7 @@ export default function Home() {
   };
 
   const switchMode = (nextMode: ExamMode) => {
+    if (nextMode === 'practice' && !PRACTICE_MODE_ENABLED) return;
     setSeenAtSelection(readSeenQuestions());
     setFocusQuestionKey(null);
     setMode(nextMode);
@@ -1035,7 +1037,7 @@ export default function Home() {
     const targetExams = examsByGrade[entry.grade];
     const targetIndex = Math.max(0, targetExams.findIndex((item) => item.id === entry.examId));
     switchGrade(entry.grade);
-    setMode('practice');
+    setMode(PRACTICE_MODE_ENABLED ? 'practice' : 'test');
     setExamIndex(targetIndex);
     setFocusQuestionKey(entry.key);
     setHubPanel(null);
@@ -1136,17 +1138,17 @@ export default function Home() {
         <aside className="watercolor-paper hidden self-start p-4 lg:block">{examMenu}</aside>
 
         <section className="min-w-0" onContextMenu={openDictionary} onMouseUp={openDictionaryFromSelection}>
-          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-950">🔒 Chế độ tạm thời: chỉ mở đề giữa kỳ và cuối kỳ của lớp 8, lớp 10. Các câu MCQ được lấy và đảo ngẫu nhiên; mỗi lần hiển thị trọn một mục bài.</div>
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-950">🔒 Chế độ tạm thời: chỉ mở bài kiểm tra giữa kỳ và cuối kỳ của lớp 8, lớp 10. Chế độ Luyện tập đang tạm khóa. Các câu MCQ được lấy và đảo ngẫu nhiên; mỗi lần hiển thị trọn một mục bài.</div>
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div><p className="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-sky-700"><BookOpen className="size-4"/> English {grade} · {question.section}</p><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{exam.title}</h1></div>
             <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold shadow-sm">Mục {currentPageIndex + 1} / {questionPages.length}</span>
           </div>
           <div className="mb-3 grid gap-2 text-sm sm:grid-cols-2">
-            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sky-950"><strong>Luyện tập:</strong> Hiển thị trọn từng mục bài, câu nào cũng có Hint. Sai lần 1 xem gợi ý; lần 2 khóa 10 giây; từ lần 3 khóa 20 giây. Bôi đen tiếng Anh để tự bật nghĩa.</div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500"><strong>🔒 Luyện tập:</strong> Chế độ này đang tạm khóa.</div>
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700"><strong>Làm bài test:</strong> Mỗi lần mở trọn một mục bài; {questions.length} câu trong {exam.durationMinutes ?? 60} phút. Làm đủ và nộp bài mới xem đáp án, lời giải.</div>
           </div>
           <div className="mb-5 grid grid-cols-2 rounded-2xl border border-sky-100 bg-white p-1.5 shadow-sm">
-            <button onClick={() => switchMode('practice')} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${mode === 'practice' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:bg-sky-50'}`}>Luyện tập</button>
+            <button type="button" disabled aria-disabled="true" title="Chế độ Luyện tập đang tạm khóa" className="cursor-not-allowed rounded-xl bg-slate-100 px-3 py-2.5 text-sm font-bold text-slate-400">🔒 Luyện tập</button>
             <button onClick={() => switchMode('test')} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${mode === 'test' ? 'bg-[#123c5a] text-white shadow-sm' : 'text-slate-600 hover:bg-sky-50'}`}>Làm bài test</button>
           </div>
           {exam.sourceNote && <p className="mb-5 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900"><strong>Nguồn ôn tập:</strong> {exam.sourceNote}</p>}
