@@ -106,13 +106,13 @@ type ExamSpec = { id: number; menuLabel: string; menuGroup: 'midterm' | 'review'
 const specs: ExamSpec[] = [
   ...Array.from({ length: 6 }, (_, index) => ({ id: index + 7, menuLabel: `Giữa kỳ I · Đề ${index + 1}`, menuGroup: 'midterm' as const, title: `English 10 · Đề giữa kỳ I số ${index + 1}`, theme: 'Units 1–3 · Không gồm phần nghe', reading: index, offset: index * 7 })),
   { id: 13, menuLabel: 'Ôn tập cuối kỳ I', menuGroup: 'review', title: 'English 10 · Ôn tập cuối kỳ I', theme: 'Tổng ôn Units 1–6 · 25 câu', reading: 16, offset: 19 },
-  ...Array.from({ length: 10 }, (_, index) => ({ id: index + 14, menuLabel: `Cuối kỳ I · Đề ${index + 1}`, menuGroup: 'final' as const, title: `English 10 · Đề cuối kỳ I số ${index + 1}`, theme: 'Units 1–6 · Không gồm phần nghe', reading: index + 6, offset: index * 9 + 3 })),
+  ...Array.from({ length: 10 }, (_, index) => ({ id: index + 14, menuLabel: `Cuối kỳ I · Đề ${index + 1}`, menuGroup: 'final' as const, title: `English 10 · Đề cuối kỳ I số ${index + 1}`, theme: 'Units 1–6 · 40 câu · Không gồm phần nghe', reading: index + 6, offset: index * 9 + 3 })),
 ];
 
-const selectLanguage = (offset: number): Template[] => {
+const selectLanguage = (offset: number, count = 20): Template[] => {
   const chosen: Template[] = [];
   let cursor = offset % bank.length;
-  while (chosen.length < 20) {
+  while (chosen.length < count) {
     const candidate = bank[cursor];
     if (!chosen.includes(candidate)) chosen.push(candidate);
     cursor = (cursor + 7) % bank.length;
@@ -122,7 +122,7 @@ const selectLanguage = (offset: number): Template[] => {
 
 export const semesterOneExams10: Exam[] = specs.map((spec) => {
   const reading = readings[spec.reading];
-  const templates = [...selectLanguage(spec.offset), ...readingQuestions(reading)];
+  const templates = [...selectLanguage(spec.offset, spec.menuGroup === 'final' ? 35 : 20), ...readingQuestions(reading)];
   return {
     id: spec.id,
     menuLabel: spec.menuLabel,

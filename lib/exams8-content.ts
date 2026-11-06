@@ -96,8 +96,8 @@ const semesterReadings: Reading[] = [
 
 const finalExams: Exam[] = semesterReadings.map((reading, index) => {
   const isReview = index === 0;
-  const templates = [...soundQuestions, ...selectCommon(index * 17 + 5, 18), ...readingQuestions(reading)];
-  return { id: index + 19, menuLabel: isReview ? 'Ôn tập cuối kỳ I' : `Cuối kỳ I · Đề ${index}`, menuGroup: isReview ? 'review' : 'final', title: isReview ? 'English 8 · Ôn tập cuối kỳ I' : `English 8 · Đề cuối kỳ I số ${index}`, theme: isReview ? 'Tổng ôn Units 1–6 · 25 câu' : 'Units 1–6 · Không gồm phần nghe', sourceNote: 'Bộ câu hỏi được biên soạn lại theo phạm vi và cấu trúc đề học kỳ I Tiếng Anh 8 Global Success trên Loigiaihay; không sao chép nguyên văn và đã loại bỏ phần nghe.', passageTitle: reading.title, passage: reading.passage, reviewNotes: isReview ? unitSpecs.slice(0, 6).map((unit) => ({ title: unit.grammar, rule: unit.rule, example: unit.example })) : undefined, questions: templates.map((item, questionIndex) => ({ ...item, id: questionIndex + 1 })) };
+  const templates = [...soundQuestions, ...selectCommon(index * 17 + 5, isReview ? 18 : 33), ...readingQuestions(reading)];
+  return { id: index + 19, menuLabel: isReview ? 'Ôn tập cuối kỳ I' : `Cuối kỳ I · Đề ${index}`, menuGroup: isReview ? 'review' : 'final', title: isReview ? 'English 8 · Ôn tập cuối kỳ I' : `English 8 · Đề cuối kỳ I số ${index}`, theme: isReview ? 'Tổng ôn Units 1–6 · 25 câu' : 'Units 1–6 · 40 câu · Không gồm phần nghe', sourceNote: 'Bộ câu hỏi được biên soạn lại theo phạm vi và cấu trúc đề học kỳ I Tiếng Anh 8 Global Success trên Loigiaihay; không sao chép nguyên văn và đã loại bỏ phần nghe.', passageTitle: reading.title, passage: reading.passage, reviewNotes: isReview ? unitSpecs.slice(0, 6).map((unit) => ({ title: unit.grammar, rule: unit.rule, example: unit.example })) : undefined, questions: templates.map((item, questionIndex) => ({ ...item, id: questionIndex + 1 })) };
 });
 
 export const additionalExams8: Exam[] = [...unitExams, ...finalExams];

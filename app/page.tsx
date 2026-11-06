@@ -32,6 +32,7 @@ type HubPanel = 'map' | 'vault' | 'wrong' | 'missions' | 'shop' | 'inventory' | 
 type FlagEntry = { key: string; grade: GradeLevel; examId: number; examTitle: string; prompt: string; section: Question['section']; savedAt: number };
 type WrongEntry = FlagEntry & { mistakes: number };
 type DailyStats = { date: string; correct: number; flags: number; completed: number };
+type ExamResult = { key: string; grade: GradeLevel; examId: number; examTitle: string; menuGroup?: MenuGroup; score: number; total: number; bestScore: number; attempts: number; completedAt: number };
 type BossPenaltyKind = 'keyboard' | 'extra-options' | 'one-hp' | 'screen-lock' | 'duck-salad' | 'duck-porridge' | 'plucked-duck' | 'peking-duck' | 'duck-bamboo';
 type BossPenalty = { kind: BossPenaltyKind; seconds: number; label: string; asset?: string };
 type LoadoutSlot = 'head' | 'outfit' | 'weapon';
@@ -336,6 +337,7 @@ export default function Home() {
   const [dailyStats, setDailyStats] = useState<DailyStats>({ date: new Date().toISOString().slice(0, 10), correct: 0, flags: 0, completed: 0 });
   const [duckCoins, setDuckCoins] = useState(0);
   const [completedExamKeys, setCompletedExamKeys] = useState<string[]>([]);
+  const [examResults, setExamResults] = useState<ExamResult[]>([]);
   const [effectLevel, setEffectLevel] = useState<EffectLevel>('full');
   const [storageReady, setStorageReady] = useState(false);
   const [focusQuestionKey, setFocusQuestionKey] = useState<string | null>(null);
@@ -422,6 +424,7 @@ export default function Home() {
       setFlagVault(JSON.parse(window.localStorage.getItem('english-moet-flag-vault') ?? '[]') as FlagEntry[]);
       setWrongBook(JSON.parse(window.localStorage.getItem('english-moet-wrong-book') ?? '[]') as WrongEntry[]);
       setCompletedExamKeys(JSON.parse(window.localStorage.getItem('english-moet-completed') ?? '[]') as string[]);
+      setExamResults(JSON.parse(window.localStorage.getItem('english-moet-exam-results') ?? '[]') as ExamResult[]);
       setDuckCoins(Number(window.localStorage.getItem('english-moet-coins') ?? 0));
       setEffectLevel((window.localStorage.getItem('english-moet-effects') as EffectLevel | null) ?? 'full');
       setOwnedLoadout(JSON.parse(window.localStorage.getItem('english-moet-owned-loadout') ?? '[]') as string[]);
@@ -438,6 +441,7 @@ export default function Home() {
       window.localStorage.setItem('english-moet-flag-vault', JSON.stringify(flagVault));
       window.localStorage.setItem('english-moet-wrong-book', JSON.stringify(wrongBook));
       window.localStorage.setItem('english-moet-completed', JSON.stringify(completedExamKeys));
+      window.localStorage.setItem('english-moet-exam-results', JSON.stringify(examResults));
       window.localStorage.setItem('english-moet-coins', String(duckCoins));
       window.localStorage.setItem('english-moet-effects', effectLevel);
       window.localStorage.setItem('english-moet-daily', JSON.stringify(dailyStats));
@@ -445,7 +449,7 @@ export default function Home() {
       window.localStorage.setItem('english-moet-equipped-loadout', JSON.stringify(equippedLoadout));
       window.localStorage.setItem('english-moet-reviewed-vocabulary', JSON.stringify(reviewedVocabularyKeys));
     } catch { /* localStorage is optional */ }
-  }, [completedExamKeys, dailyStats, duckCoins, effectLevel, equippedLoadout, flagVault, ownedLoadout, reviewedVocabularyKeys, storageReady, wrongBook]);
+  }, [completedExamKeys, dailyStats, duckCoins, effectLevel, equippedLoadout, examResults, flagVault, ownedLoadout, reviewedVocabularyKeys, storageReady, wrongBook]);
 
   useEffect(() => {
     if (!question) return;
@@ -913,6 +917,23 @@ export default function Home() {
   const submitExam = () => {
     if (!canSubmit) return;
     const completionKey = `${grade}-${exam.id}`;
+    const completedAt = Date.now();
+    setExamResults((current) => {
+      const previous = current.find((item) => item.key === completionKey);
+      const result: ExamResult = {
+        key: completionKey,
+        grade,
+        examId: exam.id,
+        examTitle: exam.menuLabel ?? exam.title,
+        menuGroup: exam.menuGroup,
+        score,
+        total: questions.length,
+        bestScore: Math.max(previous?.bestScore ?? 0, score),
+        attempts: (previous?.attempts ?? 0) + 1,
+        completedAt,
+      };
+      return [result, ...current.filter((item) => item.key !== completionKey)].slice(0, 200);
+    });
     setCompletedExamKeys((current) => {
       if (current.includes(completionKey)) return current;
       setDuckCoins((coinsNow) => coinsNow + 20);
@@ -1049,12 +1070,19 @@ export default function Home() {
     setHubPanel(null);
   };
 
-  const renderExamButton = (item: (typeof availableExams)[number], index: number) => (
-    <button key={item.id} onClick={() => selectExam(index)} className={`group rounded-2xl px-3 py-2.5 text-left transition ${index === examIndex ? 'bg-sky-600 text-white shadow-md shadow-sky-100' : 'bg-sky-50 text-[#15324a] hover:bg-sky-100'}`}>
+  const renderExamButton = (item: (typeof availableExams)[number], index: number) => {
+    const result = examResults.find((entry) => entry.key === `${grade}-${item.id}`);
+    const latestPoints = result ? (result.score / result.total) * 10 : 0;
+    const bestPoints = result ? (result.bestScore / result.total) * 10 : 0;
+    return <button key={item.id} onClick={() => selectExam(index)} className={`group rounded-2xl px-3 py-2.5 text-left transition ${index === examIndex ? 'bg-sky-600 text-white shadow-md shadow-sky-100' : 'bg-sky-50 text-[#15324a] hover:bg-sky-100'}`}>
       <span className="flex min-w-0 items-start justify-between gap-2"><b className="min-w-0 break-words">{item.menuLabel ?? `Đề số ${item.id}`}</b><small className={`shrink-0 rounded-full px-2 py-0.5 font-bold ${index === examIndex ? 'bg-white/20 text-white' : 'bg-white text-sky-700'}`}>{item.questions.length} câu</small></span>
-      {item.bookLabel && <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${index === examIndex ? 'bg-white/20 text-white' : item.bookLabel === 'Bộ mới' ? 'bg-amber-100 text-amber-800' : 'bg-white text-slate-500'}`}>{item.bookLabel}</span>}
-    </button>
-  );
+      <span className="mt-1 flex flex-wrap items-center gap-1.5">
+        {item.bookLabel && <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${index === examIndex ? 'bg-white/20 text-white' : item.bookLabel === 'Bộ mới' ? 'bg-amber-100 text-amber-800' : 'bg-white text-slate-500'}`}>{item.bookLabel}</span>}
+        {result && <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-black ${index === examIndex ? 'bg-emerald-300 text-emerald-950' : 'bg-emerald-100 text-emerald-800'}`}>✓ Điểm: {latestPoints.toFixed(1)}/10 · {result.score}/{result.total}</span>}
+        {result && result.attempts > 1 && <span className={`text-[10px] font-bold ${index === examIndex ? 'text-sky-100' : 'text-slate-500'}`}>Cao nhất {bestPoints.toFixed(1)} · {result.attempts} lượt</span>}
+      </span>
+    </button>;
+  };
 
   const menuGroups = QUESTION_BANK_GROUPS.filter(([group]) => availableExams.some((item) => item.menuGroup === group));
   const lockedMenuGroups = QUESTION_BANK_GROUPS.filter(([group]) => !OPEN_EXAM_GROUPS.includes(group) && examsByGrade[grade].some((item) => item.menuGroup === group));
@@ -1167,7 +1195,7 @@ export default function Home() {
 
           {submitted ? (
             <article className="watercolor-card overflow-hidden text-center">
-              <div className="bg-sky-600 px-6 py-8 text-white">{commandoUnlocked ? <><div aria-label="Huy hiệu Vịt Commando" className="mx-auto h-44 w-28 bg-no-repeat drop-shadow-xl" style={{ backgroundImage: 'url(duck-commando-ranks.png)', backgroundSize: '500% 100%', backgroundPosition: '100% center' }} /><span className="mt-2 inline-flex rounded-full bg-amber-300 px-4 py-1.5 text-sm font-black uppercase tracking-wider text-amber-950">Huy hiệu Vịt Commando</span></> : <img src="duck-celebrate.png" alt="Vịt nhỏ chúc mừng" className="mx-auto h-36 w-36 object-contain drop-shadow-lg"/>}<p className="mt-3 text-sm font-bold uppercase tracking-[.18em] text-sky-100">Đã hoàn thành English {grade} · {exam.menuLabel ?? `Đề ${exam.id}`}</p><h2 className="mt-2 text-4xl font-extrabold">{score}/{questions.length} câu đúng</h2></div>
+              <div className="bg-sky-600 px-6 py-8 text-white">{commandoUnlocked ? <><div aria-label="Huy hiệu Vịt Commando" className="mx-auto h-44 w-28 bg-no-repeat drop-shadow-xl" style={{ backgroundImage: 'url(duck-commando-ranks.png)', backgroundSize: '500% 100%', backgroundPosition: '100% center' }} /><span className="mt-2 inline-flex rounded-full bg-amber-300 px-4 py-1.5 text-sm font-black uppercase tracking-wider text-amber-950">Huy hiệu Vịt Commando</span></> : <img src="duck-celebrate.png" alt="Vịt nhỏ chúc mừng" className="mx-auto h-36 w-36 object-contain drop-shadow-lg"/>}<p className="mt-3 text-sm font-bold uppercase tracking-[.18em] text-sky-100">Đã hoàn thành English {grade} · {exam.menuLabel ?? `Đề ${exam.id}`}</p><h2 className="mt-2 text-4xl font-extrabold">{score}/{questions.length} câu đúng</h2><p className="mt-2 font-bold text-amber-200">Điểm: {((score / questions.length) * 10).toFixed(1)}/10 · Đã lưu vào đúng đề này</p></div>
               <div className="p-7">
                 <p className="text-lg text-slate-600">{score / questions.length >= 0.8 ? 'Xuất sắc! Vịt Nhỏ thấy bạn đã nắm bài rất chắc.' : score / questions.length >= 0.6 ? 'Làm tốt lắm! Xem lại vài câu sai là bạn sẽ tiến bộ nhanh.' : 'Mình cùng xem lại đáp án rồi thử lần nữa nhé.'}</p>
                 {mode === 'practice' && score === questions.length && <div className="mx-auto mt-5 flex max-w-md items-center gap-4 rounded-2xl border-2 border-slate-700 bg-slate-900 p-4 text-left text-white"><img src="duck-kevlar-v2.png" alt="Vịt nhận giáp Kevlar" className="h-24 w-24 object-contain"/><div><strong className="text-lg text-amber-300">Đã nhận giáp Kevlar +5</strong><p className="mt-1 text-sm text-slate-300">Giáp chặn 5 lần sai trước khi trừ máu thật. Tủ cấp cứu không hồi được giáp.</p></div></div>}
