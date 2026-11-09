@@ -44,6 +44,7 @@ const STARTER_AID: AidInventory = { cotton: 0, medicine: 0, injection: 0 };
 const OPEN_GRADES: GradeLevel[] = [8, 10];
 const OPEN_EXAM_GROUPS: MenuGroup[] = ['midterm', 'final', 'midterm2', 'final2'];
 const PRACTICE_MODE_ENABLED = false;
+const SIMPLE_INTERFACE = true;
 const AID_ITEMS: { kind: AidKind; name: string; icon: string; heal: number; color: string }[] = [
   { kind: 'cotton', name: 'Bông băng', icon: '🩹', heal: 1, color: 'border-sky-200 bg-sky-50 text-sky-900' },
   { kind: 'medicine', name: 'Thuốc hồi phục', icon: '💊', heal: 2, color: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
@@ -515,6 +516,7 @@ export default function Home() {
   }, [grade, examIndex]);
 
   useEffect(() => {
+    if (SIMPLE_INTERFACE) return;
     let idleTimer = 0;
     let floodTimer = 0;
     let nextId = 1;
@@ -1147,37 +1149,34 @@ export default function Home() {
   );
 
   return (
-    <main className={`watercolor-app min-h-screen text-[#19384d] effects-${effectLevel}`}>
-      <header className="watercolor-header sticky top-0 z-30 px-4 py-3 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-3">
-          <div className="flex shrink-0 items-center gap-3">
-            <img src={grade === 8 ? 'duck-grade8-reading.png' : grade === 9 ? 'duck-grade9-explorer.png' : 'duck-learn.png'} alt={`Mascot vịt vàng English ${grade}`} className="h-12 w-12 rounded-xl object-cover object-top" />
-            <div className="hidden min-[440px]:block"><strong className="block text-lg leading-tight">English MOET</strong><span className="hidden text-sm text-slate-500 sm:block">English {grade} · Học chắc, luyện đúng dạng</span></div>
+    <main className="min-h-screen bg-slate-50 text-[#19384d]">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto grid max-w-4xl gap-3 sm:grid-cols-[auto_130px_minmax(0,1fr)] sm:items-end">
+          <div className="flex items-center gap-2 sm:pb-1">
+            <img src="duck-learn.png" alt="English MOET" className="h-10 w-10 object-contain" />
+            <div><strong className="block text-lg leading-tight">English MOET</strong><span className="text-xs text-slate-500">Giao diện làm bài đơn giản</span></div>
           </div>
-          <div ref={gradeTabsRef} className="flex min-w-0 flex-1 overflow-x-auto rounded-2xl border border-sky-100 bg-sky-50 p-1 sm:max-w-[68vw]" aria-label="Chọn khối lớp">
-            {([6, 7, 8, 9, 10, 11, 12] as GradeLevel[]).map((item) => { const unlocked = OPEN_GRADES.includes(item); return <button key={item} onClick={() => switchGrade(item)} disabled={!unlocked} className={`shrink-0 rounded-xl px-2 py-2 text-xs font-extrabold transition sm:px-3 sm:text-sm ${grade === item ? 'bg-sky-600 text-white shadow-sm' : unlocked ? 'text-sky-800 hover:bg-white' : 'cursor-not-allowed bg-slate-100/80 text-slate-400'}`} aria-pressed={grade === item} aria-label={unlocked ? `English ${item}` : `English ${item} đang tạm khóa`}>{!unlocked && <span aria-hidden="true">🔒 </span>}English {item}</button>; })}
-          </div>
-          <span className="hidden rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800 xl:inline">{availableExams.length} mục học · {availableExams.reduce((total, item) => total + item.questions.length, 0)} câu</span>
-          <Sheet><SheetTrigger render={<Button variant="outline" size="icon" className="lg:hidden" aria-label="Mở danh sách đề" />}><Menu /></SheetTrigger><SheetContent side="left"><SheetTitle className="mb-5">Chọn đề</SheetTitle>{examMenu}</SheetContent></Sheet>
+          <label className="grid gap-1 text-xs font-bold text-slate-600">Lớp
+            <select value={grade} onChange={(event) => switchGrade(Number(event.target.value) as GradeLevel)} className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100">
+              {OPEN_GRADES.map((item) => <option key={item} value={item}>English {item}</option>)}
+            </select>
+          </label>
+          <label className="grid min-w-0 gap-1 text-xs font-bold text-slate-600">Chọn đề
+            <select value={examIndex} onChange={(event) => selectExam(Number(event.target.value))} className="min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100">
+              {availableExams.map((item, index) => { const result = examResults.find((entry) => entry.key === `${grade}-${item.id}`); const points = result ? ` · Điểm ${((result.score / result.total) * 10).toFixed(1)}` : ''; return <option key={item.id} value={index}>{item.menuLabel ?? item.title} · {item.questions.length} câu{points}</option>; })}
+            </select>
+          </label>
         </div>
       </header>
 
-      <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[210px_minmax(0,1fr)_250px]">
-        <aside className="watercolor-paper hidden self-start p-4 lg:block">{examMenu}</aside>
-
+      <div className="relative mx-auto max-w-4xl px-4 py-5">
         <section className="min-w-0" onContextMenu={openDictionary} onMouseUp={openDictionaryFromSelection}>
-          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-950">🔒 Chế độ tạm thời: chỉ mở bài kiểm tra giữa kỳ và cuối kỳ của lớp 8, lớp 10. Chế độ Luyện tập đang tạm khóa. Các câu MCQ được lấy và đảo ngẫu nhiên; mỗi lần hiển thị trọn một mục bài.</div>
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-            <div><p className="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-sky-700"><BookOpen className="size-4"/> English {grade} · {question.section}</p><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{exam.title}</h1></div>
-            <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold shadow-sm">Mục {currentPageIndex + 1} / {questionPages.length}</span>
-          </div>
-          <div className="mb-3 grid gap-2 text-sm sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500"><strong>🔒 Luyện tập:</strong> Chế độ này đang tạm khóa.</div>
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700"><strong>Làm bài test:</strong> Mỗi lần mở trọn một mục bài; {questions.length} câu trong {exam.durationMinutes ?? 60} phút. Làm đủ và nộp bài mới xem đáp án, lời giải.</div>
-          </div>
-          <div className="mb-5 grid grid-cols-2 rounded-2xl border border-sky-100 bg-white p-1.5 shadow-sm">
-            <button type="button" disabled aria-disabled="true" title="Chế độ Luyện tập đang tạm khóa" className="cursor-not-allowed rounded-xl bg-slate-100 px-3 py-2.5 text-sm font-bold text-slate-400">🔒 Luyện tập</button>
-            <button onClick={() => switchMode('test')} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${mode === 'test' ? 'bg-[#123c5a] text-white shadow-sm' : 'text-slate-600 hover:bg-sky-50'}`}>Làm bài test</button>
+          <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div><p className="mb-1 text-xs font-black uppercase tracking-wider text-sky-700">English {grade} · {QUESTION_BANK_GROUPS.find(([group]) => group === exam.menuGroup)?.[1]}</p><h1 className="text-xl font-bold tracking-tight sm:text-2xl">{exam.title}</h1></div>
+              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-700">Mục {currentPageIndex + 1}/{questionPages.length}</span>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{questions.length} câu · {exam.durationMinutes ?? 60} phút · Làm đủ câu rồi nộp bài để xem điểm và lời giải.</p>
           </div>
           {exam.sourceNote && <p className="mb-5 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900"><strong>Nguồn ôn tập:</strong> {exam.sourceNote}</p>}
           {unitLesson && (mode === 'practice' || submitted) && <GrammarLesson key={`${grade}-${exam.id}`} grade={grade} lesson={unitLesson} vocabularyReviewed={reviewedVocabularyKeys.includes(`${grade}-${exam.id}`)} onVocabularyReviewed={() => setReviewedVocabularyKeys((current) => current.includes(`${grade}-${exam.id}`) ? current : [...current, `${grade}-${exam.id}`])} />}
@@ -1191,10 +1190,20 @@ export default function Home() {
               </div>)}
             </div>
           </details>}
+          {!submitted && <div className="sticky top-[174px] z-20 mb-4 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-md backdrop-blur sm:top-[91px]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-4 text-sm"><span><b>{answeredCount}/{questions.length}</b> câu đã làm</span><span className="flex items-center gap-1.5 font-mono text-lg font-black text-slate-900"><Clock3 className="size-4 text-sky-700"/>{formatTime(secondsLeft)}</span></div>
+              <Button disabled={!canSubmit} onClick={submitExam} className="rounded-xl bg-[#123c5a] px-5 font-bold hover:bg-[#0e3048]">Nộp bài</Button>
+            </div>
+            <details className="mt-3 border-t border-slate-100 pt-2">
+              <summary className="cursor-pointer select-none text-sm font-bold text-sky-800">Xem danh sách câu</summary>
+              <div className="mt-3 grid grid-cols-5 gap-2 sm:grid-cols-8 md:grid-cols-10">{questions.map((item, index) => { const done = isAnswerComplete(item, answers[item.id]); return <button aria-label={`Mở câu ${index + 1}`} key={item.id} onClick={() => setQuestionIndex(index)} className={`aspect-square rounded-lg text-sm font-bold ${questionIndex === index ? 'ring-2 ring-sky-700 ring-offset-2' : ''} ${done ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-sky-100'}`}>{index + 1}</button>})}</div>
+            </details>
+          </div>}
           <Progress value={(answeredCount / questions.length) * 100} className="mb-5 h-2.5" />
 
           {submitted ? (
-            <article className="watercolor-card overflow-hidden text-center">
+            <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-center shadow-sm">
               <div className="bg-sky-600 px-6 py-8 text-white">{commandoUnlocked ? <><div aria-label="Huy hiệu Vịt Commando" className="mx-auto h-44 w-28 bg-no-repeat drop-shadow-xl" style={{ backgroundImage: 'url(duck-commando-ranks.png)', backgroundSize: '500% 100%', backgroundPosition: '100% center' }} /><span className="mt-2 inline-flex rounded-full bg-amber-300 px-4 py-1.5 text-sm font-black uppercase tracking-wider text-amber-950">Huy hiệu Vịt Commando</span></> : <img src="duck-celebrate.png" alt="Vịt nhỏ chúc mừng" className="mx-auto h-36 w-36 object-contain drop-shadow-lg"/>}<p className="mt-3 text-sm font-bold uppercase tracking-[.18em] text-sky-100">Đã hoàn thành English {grade} · {exam.menuLabel ?? `Đề ${exam.id}`}</p><h2 className="mt-2 text-4xl font-extrabold">{score}/{questions.length} câu đúng</h2><p className="mt-2 font-bold text-amber-200">Điểm: {((score / questions.length) * 10).toFixed(1)}/10 · Đã lưu vào đúng đề này</p></div>
               <div className="p-7">
                 <p className="text-lg text-slate-600">{score / questions.length >= 0.8 ? 'Xuất sắc! Vịt Nhỏ thấy bạn đã nắm bài rất chắc.' : score / questions.length >= 0.6 ? 'Làm tốt lắm! Xem lại vài câu sai là bạn sẽ tiến bộ nhanh.' : 'Mình cùng xem lại đáp án rồi thử lần nữa nhé.'}</p>
@@ -1219,7 +1228,7 @@ export default function Home() {
             </article>
           ) : (
             <div>
-              <div className="max-h-[72vh] space-y-5 overflow-y-auto overscroll-contain pr-2 [scrollbar-gutter:stable]" aria-label="Khu vực câu hỏi có thanh cuộn riêng">
+              <div className="max-h-[68vh] space-y-4 overflow-y-auto overscroll-contain pr-2 [scrollbar-gutter:stable]" aria-label="Khu vực câu hỏi có thanh cuộn riêng">
               {visibleQuestionIndexes.map((itemIndex, visibleIndex) => {
                 const item = questions[itemIndex];
                 const itemKey = questionKey(item);
@@ -1233,7 +1242,7 @@ export default function Home() {
                 const previousItem = visibleIndex > 0 ? questions[visibleQuestionIndexes[visibleIndex - 1]] : undefined;
                 const showReadingPassage = item.section === 'Reading' && (!previousItem || previousItem.section !== 'Reading' || previousItem.passage !== item.passage || previousItem.passageTitle !== item.passageTitle);
                 const renderedQuestion = mode === 'survival' ? displayQuestion : item;
-                return <article key={item.id} className="watercolor-card p-5 sm:p-8">
+                return <article id={`question-${itemIndex + 1}`} key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                   <div className="mb-5 flex items-start justify-between gap-3"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">English {grade}</span>{(item.sourceUnit ?? exam.unit) && <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">Unit {item.sourceUnit ?? exam.unit}</span>}<span className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">{QUESTION_BANK_GROUPS.find(([group]) => group === exam.menuGroup)?.[1] ?? 'Bài luyện tập'}</span><span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">{item.skillArea ?? (item.section === 'Reading' ? 'Reading' : item.section === 'Writing' ? 'Writing' : 'Language Focus')}</span></div><button onClick={() => toggleFlag(item)} className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${itemFlagged ? 'bg-amber-100 text-amber-800' : 'text-slate-500 hover:bg-slate-50'}`}><Flag className="size-4" fill={itemFlagged ? 'currentColor' : 'none'}/> {itemFlagged ? 'Đã cắm cờ' : 'Cắm cờ'}</button></div>
                   {showReadingPassage && (item.passage ?? exam.passage) && <div className="mb-6 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-[15px] leading-7 text-slate-700"><strong className="mb-2 block text-amber-900">{item.passageTitle ?? exam.passageTitle}</strong>{item.passage ?? exam.passage}</div>}
                   <ExerciseQuestion question={renderedQuestion} questionNumber={itemIndex + 1} value={itemSelected} disabled={lockedQuestion === item.id || (mode === 'practice' && answers[item.id] !== undefined) || (mode === 'survival' && (bossPenalty?.kind === 'keyboard' || bossPenalty?.kind === 'screen-lock'))} practiceCorrect={mode === 'practice' && isQuestionCorrect(item, answers[item.id])} showCheck={mode === 'practice' || mode === 'survival'} progressiveHint={mode === 'practice' && itemIsTypedVocabulary ? itemHintText : undefined} hintMeaning={mode === 'practice' && itemIsTypedVocabulary ? itemHintMeaning : undefined} onRevealHint={mode === 'practice' && itemIsTypedVocabulary ? () => setVocabHintSteps((current) => ({ ...current, [itemKey]: Math.min(itemHintAnswer.length, itemHintStep + 1) })) : undefined} onChange={(value) => chooseAnswer(value, itemIndex)} onCheck={() => checkTypedAnswer(itemIndex)}/>
@@ -1243,12 +1252,12 @@ export default function Home() {
                 </article>;
               })}
               </div>
-              {mode !== 'survival' && <nav className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm" aria-label="Chuyển mục bài"><Button variant="outline" disabled={currentPageIndex === 0} onClick={() => setQuestionIndex(questionPages[currentPageIndex - 1]?.[0] ?? 0)} className="rounded-xl"><ChevronLeft/> Mục trước</Button><strong className="text-sm text-slate-600">Mục {currentPageIndex + 1}/{questionPages.length} · {visibleQuestionIndexes.length} câu</strong>{currentPageIndex === questionPages.length - 1 ? <Button disabled={!canSubmit} onClick={submitExam} className="rounded-xl bg-[#123c5a] px-5 hover:bg-[#0e3048]">{mode === 'test' ? 'Nộp bài' : 'Xem tổng kết'}</Button> : <Button onClick={() => setQuestionIndex(questionPages[currentPageIndex + 1]?.[0] ?? questionIndex)} className="rounded-xl bg-sky-600 px-5 hover:bg-sky-700">Mục tiếp <ChevronRight/></Button>}</nav>}
+              {mode !== 'survival' && <nav className="sticky bottom-3 z-20 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur" aria-label="Chuyển mục bài"><Button variant="outline" disabled={currentPageIndex === 0} onClick={() => setQuestionIndex(questionPages[currentPageIndex - 1]?.[0] ?? 0)} className="rounded-xl"><ChevronLeft/> Mục trước</Button><strong className="text-sm text-slate-600">Mục {currentPageIndex + 1}/{questionPages.length} · {visibleQuestionIndexes.length} câu</strong>{currentPageIndex === questionPages.length - 1 ? <Button disabled={!canSubmit} onClick={submitExam} className="rounded-xl bg-[#123c5a] px-5 hover:bg-[#0e3048]">Nộp bài</Button> : <Button onClick={() => setQuestionIndex(questionPages[currentPageIndex + 1]?.[0] ?? questionIndex)} className="rounded-xl bg-sky-600 px-5 hover:bg-sky-700">Mục tiếp <ChevronRight/></Button>}</nav>}
             </div>
           )}
         </section>
 
-        <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
+        {!SIMPLE_INTERFACE && <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
           {mode === 'survival' ? <div className={`overflow-hidden rounded-3xl p-5 text-white shadow-lg ${isBossStage ? 'bg-gradient-to-br from-rose-800 to-slate-950' : 'bg-gradient-to-br from-sky-600 via-cyan-700 to-slate-900'}`}>
             <div className="flex items-center justify-between"><span className="font-black uppercase tracking-wider">Survival · Màn {survivalStage + 1}</span><Clock3 className="size-5 text-white"/></div>
             <strong suppressHydrationWarning className="mt-2 block font-mono text-4xl tracking-tight">{formatTime(secondsLeft)}</strong>
@@ -1271,7 +1280,7 @@ export default function Home() {
           </div> : mode === 'test' ? <div className="rounded-3xl bg-[#123c5a] p-5 text-white shadow-lg shadow-sky-100"><div className="mb-3 flex items-center justify-between"><span className="text-sm text-sky-100">Thời gian còn lại</span><Clock3 className="size-5 text-amber-300"/></div><strong suppressHydrationWarning className="font-mono text-3xl tracking-tight">{formatTime(secondsLeft)}</strong><div className="mt-4 flex justify-between border-t border-white/15 pt-3 text-sm"><span>Đã làm</span><b>{answeredCount}/{questions.length}</b></div><Button disabled={!canSubmit} onClick={submitExam} className="mt-4 w-full bg-amber-500 font-bold text-white hover:bg-amber-600">NỘP BÀI</Button>{answeredCount < questions.length && <p className="mt-2 text-center text-xs leading-5 text-sky-100">Làm đủ {questions.length} câu để mở nút nộp bài.</p>}</div> : <div className="rounded-3xl bg-sky-600 p-5 text-white shadow-lg shadow-sky-100"><div className="flex items-center justify-between"><span className="font-bold">Luyện tập có trợ giúp</span><BookOpen className="size-5 text-amber-200"/></div><p className="mt-2 text-sm leading-6 text-sky-50">Sai nhiều sẽ làm màn hình nứt. Dùng vật phẩm trong tủ cấp cứu trước khi máu về 0.</p><div className="mt-4 flex justify-between border-t border-white/20 pt-3 text-sm"><span>Đã luyện</span><b>{answeredCount}/{questions.length}</b></div>{canSubmit && <Button onClick={submitExam} className="mt-4 w-full bg-white font-bold text-sky-700 hover:bg-sky-50">XEM TỔNG KẾT</Button>}</div>}
           <div className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm"><p className="mb-3 text-sm font-bold">Danh sách câu</p><div className="grid grid-cols-5 gap-2">{questions.map((item, index) => { const done = isAnswerComplete(item, answers[item.id]); const marked = flagVault.some((saved) => saved.key === questionKey(item)); return <button aria-label={`Mở câu ${index + 1}`} key={item.id} onClick={() => setQuestionIndex(index)} className={`relative aspect-square rounded-xl text-sm font-bold transition ${questionIndex === index && !submitted ? 'ring-2 ring-sky-700 ring-offset-2' : ''} ${marked ? 'bg-indigo-400 text-white' : done ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-sky-100'}`}>{marked && <Flag className="absolute right-0.5 top-0.5 size-3" fill="currentColor"/>}{index + 1}</button>})}</div><div className="mt-4 grid gap-2 text-xs text-slate-600"><span><i className="mr-2 inline-block h-3 w-3 rounded-full bg-sky-500"/>Câu đã làm</span><span><i className="mr-2 inline-block h-3 w-3 rounded-full bg-slate-200"/>Câu chưa làm</span><span><i className="mr-2 inline-block h-3 w-3 rounded-full bg-indigo-400"/>Cờ đã lưu trong Vault</span></div></div>
           <div className="rounded-3xl border border-amber-100 bg-amber-50 p-5"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Sparkles className="size-5 text-amber-600"/><strong className="text-amber-950">Từ vựng của Vịt</strong></div><button onClick={() => setVocabulary(randomVocabulary(grade))} className="rounded-full p-2 text-amber-700 transition hover:bg-amber-100" aria-label="Đổi ba từ vựng"><RefreshCw className="size-4"/></button></div><div className="mt-3 grid gap-3">{vocabulary.map((item) => <div key={item.word} className="rounded-2xl bg-white p-3 shadow-sm"><strong className="text-sky-800">{item.word}</strong><span className="ml-2 text-sm text-amber-800">{item.meaning}</span><p className="mt-1 text-sm leading-5 text-slate-600">{item.example}</p></div>)}</div></div>
-        </aside>
+        </aside>}
       </div>
       {hubPanel === 'map' && <dialog open className="fixed inset-0 z-[120] m-0 grid h-screen w-screen max-w-none place-items-center overflow-y-auto bg-slate-950/80 p-3 sm:p-6" aria-labelledby="map-title"><div className="w-full max-w-6xl overflow-hidden rounded-[30px] border-2 border-cyan-300 bg-slate-950 shadow-2xl"><div className="flex items-center justify-between gap-3 px-5 py-4 text-white"><div><p className="text-xs font-black uppercase tracking-[.2em] text-cyan-300">Learning Journey</p><h2 id="map-title" className="text-2xl font-black">Bản đồ English {grade}</h2></div><button onClick={() => setHubPanel(null)} className="rounded-full bg-white/10 p-2 hover:bg-white/20" aria-label="Đóng bản đồ"><X/></button></div><div className="relative aspect-[2/1] min-h-[330px] overflow-hidden bg-sky-200"><img src="learning-journey-map-v1.png" alt="Bản đồ hành trình học tiếng Anh" className="absolute inset-0 h-full w-full object-cover"/>{JOURNEY_STAGES.map((stage) => { const stageExams = availableExams.filter((item) => item.menuGroup === stage.group); const completed = stageExams.filter((item) => completedExamKeys.includes(`${grade}-${item.id}`)).length; const total = stageExams.length; return <button key={stage.group} onClick={() => openJourneyStage(stage.group)} disabled={total === 0} className={`journey-node absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-4 p-1 text-center shadow-xl transition hover:scale-110 disabled:opacity-40 ${completed >= total && total > 0 ? 'border-emerald-300 bg-emerald-600 text-white' : 'border-amber-300 bg-white text-sky-950'}`} style={{ left: `${stage.position[0]}%`, top: `${stage.position[1]}%` }}><span className="block text-xl sm:text-2xl">{completed >= total && total > 0 ? '✓' : stage.icon}</span><b className="hidden whitespace-nowrap rounded-full bg-slate-950/80 px-2 py-0.5 text-[10px] text-white sm:block">{stage.label} · {completed}/{Math.max(1, total)}</b></button>; })}</div><div className="grid gap-2 bg-white p-4 sm:grid-cols-3 lg:grid-cols-6">{JOURNEY_STAGES.map((stage) => <button key={stage.group} onClick={() => openJourneyStage(stage.group)} className="rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-sm font-bold text-sky-900 hover:bg-sky-100">{stage.icon} {stage.label}</button>)}</div></div></dialog>}
       {hubPanel === 'vault' && <dialog open className="fixed inset-0 z-[120] m-0 grid h-screen w-screen max-w-none place-items-center overflow-y-auto bg-slate-950/75 p-4" aria-labelledby="vault-title"><div className="w-full max-w-3xl overflow-hidden rounded-[30px] border-2 border-amber-300 bg-white shadow-2xl"><div className="grid items-center bg-gradient-to-r from-indigo-950 to-sky-800 px-6 py-5 text-white sm:grid-cols-[170px_1fr_auto]"><img src="flag-vault-v1.png" alt="Vault chứa cờ và bản đồ" className="mx-auto h-32 w-40 object-contain sm:h-36"/><div><p className="text-xs font-black uppercase tracking-[.2em] text-amber-300">Flag Vault</p><h2 id="vault-title" className="text-3xl font-black">Kho cờ đã cắm</h2><p className="mt-1 text-sm text-sky-100">Mỗi lá cờ lưu chính xác câu hỏi để em quay lại luyện sau.</p></div><button onClick={() => setHubPanel(null)} className="absolute right-6 top-6 rounded-full bg-white/10 p-2 hover:bg-white/20 sm:static" aria-label="Đóng Vault"><X/></button></div><div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">{flagVault.length === 0 ? <div className="rounded-2xl bg-amber-50 p-8 text-center text-amber-900"><Flag className="mx-auto mb-2 size-9"/><strong>Vault đang trống</strong><p className="mt-1 text-sm">Nhấn “Cắm cờ” trên một câu hỏi để lưu vào đây.</p></div> : flagVault.map((entry) => <div key={entry.key} className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50/60 p-4"><span className="text-2xl">🚩</span><button onClick={() => openSavedEntry(entry)} className="min-w-0 flex-1 text-left"><span className="text-xs font-bold text-amber-700">English {entry.grade} · {entry.section}</span><strong className="mt-1 block line-clamp-2 text-slate-900">{entry.prompt}</strong><span className="mt-1 block text-xs text-slate-500">{entry.examTitle}</span></button><button onClick={() => setFlagVault((items) => items.filter((item) => item.key !== entry.key))} className="rounded-full p-2 text-slate-400 hover:bg-rose-100 hover:text-rose-700" aria-label="Xóa cờ"><X className="size-4"/></button></div>)}</div></div></dialog>}
