@@ -41,7 +41,7 @@ type LoadoutItem = { id: string; name: string; slot: LoadoutSlot; icon: string; 
 type CatLetter = { id: number; letter: string; x: number; y: number; size: number; rotate: number; delay: number };
 
 const STARTER_AID: AidInventory = { cotton: 0, medicine: 0, injection: 0 };
-const OPEN_GRADES: GradeLevel[] = [8, 10];
+const OPEN_GRADES: GradeLevel[] = [6, 7, 8, 9, 10, 11, 12];
 const OPEN_EXAM_GROUPS: MenuGroup[] = ['midterm', 'final', 'midterm2', 'final2'];
 const PRACTICE_MODE_ENABLED = false;
 const SIMPLE_INTERFACE = true;
