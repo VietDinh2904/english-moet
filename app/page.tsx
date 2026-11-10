@@ -45,6 +45,7 @@ const OPEN_GRADES: GradeLevel[] = [8, 10];
 const OPEN_EXAM_GROUPS: MenuGroup[] = ['midterm', 'final', 'midterm2', 'final2'];
 const PRACTICE_MODE_ENABLED = false;
 const SIMPLE_INTERFACE = true;
+const STUDY_BACKGROUNDS = ['cat-study-bg-1.png', 'cat-study-bg-2.png', 'cat-study-bg-3.png'];
 const AID_ITEMS: { kind: AidKind; name: string; icon: string; heal: number; color: string }[] = [
   { kind: 'cotton', name: 'Bông băng', icon: '🩹', heal: 1, color: 'border-sky-200 bg-sky-50 text-sky-900' },
   { kind: 'medicine', name: 'Thuốc hồi phục', icon: '💊', heal: 2, color: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
@@ -1149,7 +1150,11 @@ export default function Home() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-50 text-[#19384d]">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#fffdf8] text-[#19384d]">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        {STUDY_BACKGROUNDS.map((image, index) => <img key={image} src={image} alt="" className="cat-study-background absolute left-1/2 top-1/2 h-[92vh] w-auto max-w-[94vw] -translate-x-1/2 -translate-y-1/2 object-contain" style={{ animationDelay: `${index * 12}s` }} />)}
+        <div className="absolute inset-0 bg-white/65" />
+      </div>
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-xl">
         <div className="mx-auto grid max-w-4xl gap-3 sm:grid-cols-[auto_130px_minmax(0,1fr)] sm:items-end">
           <div className="flex items-center gap-2 sm:pb-1">
@@ -1169,7 +1174,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="relative mx-auto max-w-4xl px-4 py-5">
+      <div className="relative z-10 mx-auto max-w-4xl px-4 py-5">
         <section className="min-w-0" onContextMenu={openDictionary} onMouseUp={openDictionaryFromSelection}>
           <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1243,7 +1248,7 @@ export default function Home() {
                 const showReadingPassage = item.section === 'Reading' && (!previousItem || previousItem.section !== 'Reading' || previousItem.passage !== item.passage || previousItem.passageTitle !== item.passageTitle);
                 const renderedQuestion = mode === 'survival' ? displayQuestion : item;
                 return <article id={`question-${itemIndex + 1}`} key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                  <div className="mb-5 flex items-start justify-between gap-3"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">English {grade}</span>{(item.sourceUnit ?? exam.unit) && <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">Unit {item.sourceUnit ?? exam.unit}</span>}<span className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">{QUESTION_BANK_GROUPS.find(([group]) => group === exam.menuGroup)?.[1] ?? 'Bài luyện tập'}</span><span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">{item.skillArea ?? (item.section === 'Reading' ? 'Reading' : item.section === 'Writing' ? 'Writing' : 'Language Focus')}</span></div><button onClick={() => toggleFlag(item)} className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${itemFlagged ? 'bg-amber-100 text-amber-800' : 'text-slate-500 hover:bg-slate-50'}`}><Flag className="size-4" fill={itemFlagged ? 'currentColor' : 'none'}/> {itemFlagged ? 'Đã cắm cờ' : 'Cắm cờ'}</button></div>
+                  <div className="mb-5 flex items-start justify-between gap-3"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-[#123c5a] px-3 py-1 text-sm font-black text-white">Câu {itemIndex + 1}/{questions.length}</span><span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">English {grade}</span>{(item.sourceUnit ?? exam.unit) && <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">Unit {item.sourceUnit ?? exam.unit}</span>}<span className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">{QUESTION_BANK_GROUPS.find(([group]) => group === exam.menuGroup)?.[1] ?? 'Bài luyện tập'}</span><span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">{item.skillArea ?? (item.section === 'Reading' ? 'Reading' : item.section === 'Writing' ? 'Writing' : 'Language Focus')}</span></div><button onClick={() => toggleFlag(item)} className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${itemFlagged ? 'bg-amber-100 text-amber-800' : 'text-slate-500 hover:bg-slate-50'}`}><Flag className="size-4" fill={itemFlagged ? 'currentColor' : 'none'}/> {itemFlagged ? 'Đã cắm cờ' : 'Cắm cờ'}</button></div>
                   {showReadingPassage && (item.passage ?? exam.passage) && <div className="mb-6 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-[15px] leading-7 text-slate-700"><strong className="mb-2 block text-amber-900">{item.passageTitle ?? exam.passageTitle}</strong>{item.passage ?? exam.passage}</div>}
                   <ExerciseQuestion question={renderedQuestion} questionNumber={itemIndex + 1} value={itemSelected} disabled={lockedQuestion === item.id || (mode === 'practice' && answers[item.id] !== undefined) || (mode === 'survival' && (bossPenalty?.kind === 'keyboard' || bossPenalty?.kind === 'screen-lock'))} practiceCorrect={mode === 'practice' && isQuestionCorrect(item, answers[item.id])} showCheck={mode === 'practice' || mode === 'survival'} progressiveHint={mode === 'practice' && itemIsTypedVocabulary ? itemHintText : undefined} hintMeaning={mode === 'practice' && itemIsTypedVocabulary ? itemHintMeaning : undefined} onRevealHint={mode === 'practice' && itemIsTypedVocabulary ? () => setVocabHintSteps((current) => ({ ...current, [itemKey]: Math.min(itemHintAnswer.length, itemHintStep + 1) })) : undefined} onChange={(value) => chooseAnswer(value, itemIndex)} onCheck={() => checkTypedAnswer(itemIndex)}/>
                   {mode === 'practice' && <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50 p-3"><button type="button" onClick={() => setVisibleHints((current) => ({ ...current, [itemKey]: !current[itemKey] }))} className="font-bold text-violet-800">💡 {visibleHints[itemKey] ? 'Ẩn Hint' : 'Xem Hint'}</button>{visibleHints[itemKey] && <p className="mt-2 leading-6 text-violet-950">{practiceHint(item)}</p>}</div>}
