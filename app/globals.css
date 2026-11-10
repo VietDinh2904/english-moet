@@ -341,9 +341,9 @@ body {
 }
 
 @keyframes cat-study-background-cycle {
-  0%, 30% { opacity: .13; transform: translate(-50%, -50%) scale(1); }
+  0%, 30% { opacity: .2; transform: translate(-50%, -50%) scale(1); }
   33%, 97% { opacity: 0; transform: translate(-50%, -50%) scale(1.025); }
-  100% { opacity: .13; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: .2; transform: translate(-50%, -50%) scale(1); }
 }
 
 .cat-study-background {
@@ -357,6 +357,6 @@ body {
     animation: none;
   }
   .cat-study-background:first-child {
-    opacity: .11;
+    opacity: .16;
   }
 }

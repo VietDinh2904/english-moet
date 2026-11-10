@@ -1153,7 +1153,7 @@ export default function Home() {
     <main className="relative min-h-screen overflow-x-hidden bg-[#fffdf8] text-[#19384d]">
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         {STUDY_BACKGROUNDS.map((image, index) => <img key={image} src={image} alt="" className="cat-study-background absolute left-1/2 top-1/2 h-[92vh] w-auto max-w-[94vw] -translate-x-1/2 -translate-y-1/2 object-contain" style={{ animationDelay: `${index * 12}s` }} />)}
-        <div className="absolute inset-0 bg-white/65" />
+        <div className="absolute inset-0 bg-white/45" />
       </div>
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-xl">
         <div className="mx-auto grid max-w-4xl gap-3 sm:grid-cols-[auto_130px_minmax(0,1fr)] sm:items-end">
