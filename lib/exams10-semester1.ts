@@ -10,6 +10,20 @@ const language = (
   underlines?: string[],
 ): Template => ({ section: 'Language Focus', prompt, options, answer, explanation, underlines });
 
+const writing = (prompt: string, template: string, answer: string, explanation: string, givenWord?: string): Template => ({
+  section: 'Writing',
+  skillArea: 'Writing',
+  kind: 'typed',
+  prompt,
+  template,
+  options: [],
+  answer,
+  acceptedAnswers: [[answer]],
+  explanation,
+  givenWord,
+  hint: givenWord ? `Giữ nguyên từ “${givenWord}” và kiểm tra cấu trúc ở hai bên ô trống.` : 'Xác định chủ ngữ, thì và trật tự từ trước khi viết câu hoàn chỉnh.',
+});
+
 const bank: Template[] = [
   language('Which word has a different underlined sound?', ['bread', 'head', 'ready', 'break'], 3, 'Cụm “ea” trong “break” phát âm /eɪ/; trong bread, head và ready, “ea” phát âm /e/. Khi làm dạng này, cần so sánh đúng phần được gạch chân.', ['ea', 'ea', 'ea', 'ea']),
   language('Which word has a different underlined sound?', ['clean', 'class', 'club', 'cream'], 3, 'Ba từ clean, class và club bắt đầu bằng cụm phụ âm /kl/; “cream” bắt đầu bằng /kr/. Phần được gạch chân cho thấy chính xác cụm âm cần so sánh.', ['cl', 'cl', 'cl', 'cr']),
@@ -103,33 +117,85 @@ const readingQuestions = (spec: ReadingSpec): Template[] => [
 
 type ExamSpec = { id: number; menuLabel: string; menuGroup: 'midterm' | 'review' | 'final'; title: string; theme: string; reading: number; offset: number };
 
+const midtermWriting: Template[][] = [
+  [
+    writing('Rearrange the words to make a complete sentence. Do not change the words.', 'every evening / the children / help / with dinner → [[0]]', 'The children help with dinner every evening', 'Use subject + verb + object, then the time phrase.'),
+    writing('Rewrite the sentence using the given word. Do not change its meaning.', 'My father normally prepares breakfast. (USUALLY) → My father [[0]] breakfast.', 'usually prepares', 'Put the frequency adverb before the ordinary verb.', 'USUALLY'),
+    writing('Complete the second sentence so that it means the same as the first.', 'The family started using the weekly plan two months ago. → The family [[0]] the weekly plan for two months.', 'has used', 'Use the present perfect with “for”.'),
+    writing('Rewrite the sentence in the passive voice.', 'Students collect used paper every Friday. → Used paper [[0]] every Friday.', 'is collected', 'Present-simple passive: is + past participle.'),
+    writing('Use the word in capitals to rewrite the sentence.', 'Lan likes taking care of the plants. (ENJOYS) → Lan [[0]] care of the plants.', 'enjoys taking', 'Enjoy is followed by V-ing.', 'ENJOYS'),
+  ],
+  [
+    writing('Rearrange the words to make a complete sentence. Do not change the words.', 'school yard / are planting / in the / volunteers / trees → [[0]]', 'Volunteers are planting trees in the school yard', 'Use the present continuous for an action happening now.'),
+    writing('Rewrite the sentence using the given word.', 'We want to reduce plastic waste, so we carry cloth bags. (BECAUSE) → We carry cloth bags [[0]] reduce plastic waste.', 'because we want to', 'Because introduces the reason clause.', 'BECAUSE'),
+    writing('Complete the second sentence so that it means the same as the first.', 'This is our first environmental campaign. → We [[0]] an environmental campaign before.', 'have never joined', 'Use present perfect with never and before.'),
+    writing('Rewrite the sentence in the passive voice.', 'The club will organise a clean-up day. → A clean-up day [[0]] by the club.', 'will be organised', 'Future passive: will be + past participle.'),
+    writing('Use the word in capitals to rewrite the sentence.', 'It is a good idea to reuse these boxes. (SHOULD) → We [[0]] these boxes.', 'should reuse', 'Should is followed by the base verb.', 'SHOULD'),
+  ],
+  [
+    writing('Rearrange the words to make a complete sentence. Do not change the words.', 'at the library / a charity concert / organised / the students → [[0]]', 'The students organised a charity concert at the library', 'Use the past simple for the completed event.'),
+    writing('Rewrite the sentence using the given word.', 'The musicians performed without receiving money. (FREE) → The musicians performed [[0]].', 'for free', '“For free” means without payment.', 'FREE'),
+    writing('Complete the second sentence so that it means the same as the first.', 'Mai began learning the guitar in June. → Mai [[0]] the guitar since June.', 'has learned', 'Use present perfect with since.'),
+    writing('Rewrite the sentence in the passive voice.', 'Parents sold homemade cakes at the event. → Homemade cakes [[0]] at the event.', 'were sold', 'Past-simple passive: were + past participle.'),
+    writing('Use the word in capitals to rewrite the sentence.', 'The concert was so successful that the club repeated it. (SUCH) → It was [[0]] that the club repeated it.', 'such a successful concert', 'Use such + a/an + adjective + singular noun.', 'SUCH'),
+  ],
+  [
+    writing('Rearrange the words to make a complete sentence. Do not change the words.', 'older people / every Saturday / visits / our class / the centre for → [[0]]', 'Our class visits the centre for older people every Saturday', 'Put the place before the time phrase.'),
+    writing('Rewrite the sentence using the given word.', 'Nam was shy at first, but he soon felt comfortable. (ALTHOUGH) → [[0]] at first, he soon felt comfortable.', 'Although Nam was shy', 'Although introduces a contrasting dependent clause.', 'ALTHOUGH'),
+    writing('Complete the second sentence so that it means the same as the first.', 'Listening carefully is valuable. → It is [[0]] carefully.', 'valuable to listen', 'Use it + be + adjective + to-infinitive.'),
+    writing('Rewrite the sentence in the passive voice.', 'The students read newspapers to the residents. → Newspapers [[0]] to the residents.', 'are read', 'Present-simple passive with a plural subject uses are.'),
+    writing('Use the word in capitals to rewrite the sentence.', 'We intend to return next weekend. (GOING) → We [[0]] next weekend.', 'are going to return', 'Be going to expresses an intention.', 'GOING'),
+  ],
+  [
+    writing('Rearrange the words to make a complete sentence. Do not change the words.', 'a water alarm / designed / two students / for family homes → [[0]]', 'Two students designed a water alarm for family homes', 'Use the past simple to describe the completed design.'),
+    writing('Rewrite the sentence using the given word.', 'The first model was not expensive. (INEXPENSIVE) → The first model [[0]].', 'was inexpensive', 'Replace “not expensive” with the adjective inexpensive.', 'INEXPENSIVE'),
+    writing('Complete the second sentence so that it means the same as the first.', 'The alarm warns people when a tank is full. → People [[0]] when a tank is full.', 'are warned', 'Use the present-simple passive.'),
+    writing('Rewrite the sentence using a comparative form.', 'The new model works well. The old one works less well. → The new model works [[0]] the old one.', 'better than', 'The comparative of well is better.'),
+    writing('Use the word in capitals to rewrite the sentence.', 'Families reported that they did not waste as much water. (LESS) → Families reported that they [[0]] water.', 'wasted less', 'Less is used with the uncountable noun water.', 'LESS'),
+  ],
+  [
+    writing('Rearrange the words to make a complete sentence. Do not change the words.', 'for everyone / offered / the robotics club / beginner sessions → [[0]]', 'The robotics club offered beginner sessions for everyone', 'Use subject + verb + object + prepositional phrase.'),
+    writing('Rewrite the sentence using the given word.', 'Very few girls joined the club at first. (ONLY) → [[0]] joined the club at first.', 'Only a few girls', 'Only a few expresses a small number.', 'ONLY'),
+    writing('Complete the second sentence so that it means the same as the first.', 'The number of girls doubled in two months. → There were [[0]] after two months.', 'twice as many girls', 'Twice as many describes a doubled count.'),
+    writing('Rewrite the sentence in the passive voice.', 'A female engineer gave the career talk. → The career talk [[0]] by a female engineer.', 'was given', 'Past-simple passive: was + given.'),
+    writing('Use the word in capitals to rewrite the sentence.', 'Mixed teams created the club’s best projects. (BY) → The club’s best projects [[0]] mixed teams.', 'were created by', 'Use the past passive followed by by + agent.', 'BY'),
+  ],
+];
+
 const specs: ExamSpec[] = [
   ...Array.from({ length: 6 }, (_, index) => ({ id: index + 7, menuLabel: `Giữa kỳ I · Đề ${index + 1}`, menuGroup: 'midterm' as const, title: `English 10 · Đề giữa kỳ I số ${index + 1}`, theme: 'Units 1–3 · Không gồm phần nghe', reading: index, offset: index * 7 })),
   { id: 13, menuLabel: 'Ôn tập cuối kỳ I', menuGroup: 'review', title: 'English 10 · Ôn tập cuối kỳ I', theme: 'Tổng ôn Units 1–6 · 25 câu', reading: 16, offset: 19 },
   ...Array.from({ length: 10 }, (_, index) => ({ id: index + 14, menuLabel: `Cuối kỳ I · Đề ${index + 1}`, menuGroup: 'final' as const, title: `English 10 · Đề cuối kỳ I số ${index + 1}`, theme: 'Units 1–6 · 40 câu · Không gồm phần nghe', reading: index + 6, offset: index * 9 + 3 })),
 ];
 
-const selectLanguage = (offset: number, count = 20): Template[] => {
-  const chosen: Template[] = [];
-  let cursor = offset % bank.length;
-  while (chosen.length < count) {
-    const candidate = bank[cursor];
-    if (!chosen.includes(candidate)) chosen.push(candidate);
-    cursor = (cursor + 7) % bank.length;
-  }
-  return chosen;
+const rankForSeed = (value: string) => {
+  let hash = 2166136261;
+  for (const character of value) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  return hash >>> 0;
+};
+
+const selectLanguage = (seed: number, count = 20): Template[] => {
+  return bank
+    .map((candidate, index) => ({ candidate, rank: rankForSeed(`${seed}|${index}|${candidate.prompt}`) }))
+    .sort((left, right) => left.rank - right.rank)
+    .slice(0, count)
+    .map(({ candidate }) => candidate);
 };
 
 export const semesterOneExams10: Exam[] = specs.map((spec) => {
   const reading = readings[spec.reading];
-  const templates = [...selectLanguage(spec.offset, spec.menuGroup === 'final' ? 35 : 20), ...readingQuestions(reading)];
+  const midtermIndex = spec.menuGroup === 'midterm' ? spec.id - 7 : -1;
+  const secondReading = midtermIndex >= 0 ? readings[midtermIndex + 6] : undefined;
+  const templates = spec.menuGroup === 'midterm'
+    ? [...selectLanguage(spec.offset + spec.id * 101, 25), ...readingQuestions(reading), ...readingQuestions(secondReading!), ...midtermWriting[midtermIndex]]
+    : [...selectLanguage(spec.offset + spec.id * 101, spec.menuGroup === 'final' ? 35 : 20), ...readingQuestions(reading)];
   return {
     id: spec.id,
     menuLabel: spec.menuLabel,
     menuGroup: spec.menuGroup,
     title: spec.title,
     theme: spec.theme,
-    sourceNote: 'Bộ câu hỏi được biên soạn lại theo phạm vi kiến thức và cấu trúc đề Tiếng Anh 10 Global Success trên Loigiaihay; không sao chép nguyên văn và đã loại bỏ phần nghe.',
+    sourceNote: 'Cấu trúc được đối chiếu theo bộ sưu tập công khai Loigiaihay English 10 Global Success (c1192). Câu hỏi được biên soạn mới, đã loại Listening và Functional Speaking; Reading và Writing được giữ đúng nhóm dạng bài.',
     passageTitle: reading.title,
     passage: reading.passage,
     reviewNotes: spec.menuGroup === 'review' ? [

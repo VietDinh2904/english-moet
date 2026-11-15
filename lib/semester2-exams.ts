@@ -145,7 +145,7 @@ function createExam(grade: Grade, period: Period, set: number): Exam {
 export const semester2Exams: Record<Grade, Exam[]> = {
   8: [...Array.from({ length: 7 }, (_, index) => createExam(8, 'midterm2', index + 1)), ...Array.from({ length: 7 }, (_, index) => createExam(8, 'final2', index + 1))],
   9: [...Array.from({ length: 7 }, (_, index) => createExam(9, 'midterm2', index + 1)), ...Array.from({ length: 7 }, (_, index) => createExam(9, 'final2', index + 1))],
-  10: [...Array.from({ length: 7 }, (_, index) => createExam(10, 'midterm2', index + 1)), ...Array.from({ length: 7 }, (_, index) => createExam(10, 'final2', index + 1))],
+  10: [...Array.from({ length: 8 }, (_, index) => createExam(10, 'midterm2', index + 1)), ...Array.from({ length: 8 }, (_, index) => createExam(10, 'final2', index + 1))],
 };
 
 /** Preserve the mixed formats shown in the referenced English 10 midterm model. */

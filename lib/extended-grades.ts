@@ -212,6 +212,7 @@ function assessment(grade: ExtendedGrade, id: number, menuGroup: NonNullable<Exa
 
 const publicCollectionCounts: Partial<Record<ExtendedGrade, Record<'midterm' | 'final' | 'midterm2' | 'final2', number>>> = {
   6: { midterm: 9, final: 10, midterm2: 8, final2: 8 },
+  7: { midterm: 6, final: 10, midterm2: 8, final2: 8 },
   11: { midterm: 6, final: 8, midterm2: 7, final2: 7 },
   12: { midterm: 7, final: 8, midterm2: 7, final2: 7 },
 };

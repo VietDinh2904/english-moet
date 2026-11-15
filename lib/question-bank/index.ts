@@ -8,7 +8,6 @@ import { semester2Exams } from '@/lib/semester2-exams';
 import { enrichUnitExam } from '@/lib/unit-enrichment';
 import { newBookUnitExams } from '@/lib/unit-new-books';
 import { quickTests10 } from '@/lib/question-bank/grade-10/quick-tests';
-import { grade10Midterm1Supplement } from '@/lib/question-bank/grade-10/midterm1-supplement';
 
 export type CoreGrade = 8 | 9 | 10;
 export type GradeLevel = ExtendedGrade | CoreGrade;
@@ -82,15 +81,7 @@ function prepareExams(items: Exam[], grade: CoreGrade) {
 
 const exams8 = distributeExams(prepareExams([...baseExams8, ...additionalExams8, ...semester2Exams[8]], 8));
 const balancedExams9 = distributeExams(prepareExams([...exams9, ...semester2Exams[9]], 9));
-const grade10WithSupplement = exams10.map((exam) => {
-  if (exam.menuGroup !== 'midterm' || exam.menuLabel !== 'Giữa kỳ I · Đề 1') return exam;
-  const supplementalWriting = grade10Midterm1Supplement.questions.filter((question) => question.section === 'Writing');
-  return {
-    ...exam,
-    questions: [...exam.questions, ...supplementalWriting].map((question, index) => ({ ...question, id: index + 1 })),
-  };
-});
-const balancedExams10 = distributeExams(prepareExams([...grade10WithSupplement, ...quickTests10, ...semester2Exams[10]], 10));
+const balancedExams10 = distributeExams(prepareExams([...exams10, ...quickTests10, ...semester2Exams[10]], 10));
 
 export const examsByGrade: Record<GradeLevel, Exam[]> = {
   6: extendedExams[6],
