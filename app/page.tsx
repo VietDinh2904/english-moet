@@ -161,7 +161,7 @@ function capMultipleChoiceOptions(question: Question): Question {
 function buildMixedQuestions(exam: Exam, allExams: Exam[], examIndex: number, targetCount: number, seenBefore: Set<string>, grade: GradeLevel, pinnedKey?: string | null, excludeTypedVocabulary = false, selectionOnly = false, reviewedVocabularyExamIds: Set<number> = new Set(), excludeLookingBack = false) {
   const sourceEntries = allExams.map((source, sourceIndex) => ({ source, sourceIndex })).filter(({ source }) => exam.menuGroup === 'unit'
     ? source.menuGroup === 'unit' && source.unit === exam.unit
-    : source.id === exam.id);
+    : source === exam);
   const sourcePool = sourceEntries.flatMap(({ source, sourceIndex }) => source.questions.map((question) => ({
     ...question,
     grade,

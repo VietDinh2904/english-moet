@@ -4,7 +4,7 @@ import { exams10 } from '@/lib/exams10';
 import { additionalExams8 } from '@/lib/exams8-content';
 import { exams9 } from '@/lib/exams9';
 import { extendedExams, type ExtendedGrade } from '@/lib/extended-grades';
-import { semester2Exams, upgradeEnglish10MidtermSix } from '@/lib/semester2-exams';
+import { semester2Exams } from '@/lib/semester2-exams';
 import { enrichUnitExam } from '@/lib/unit-enrichment';
 import { newBookUnitExams } from '@/lib/unit-new-books';
 import { quickTests10 } from '@/lib/question-bank/grade-10/quick-tests';
@@ -33,7 +33,31 @@ export function unitNumber(exam: Exam, grade: GradeLevel) {
 }
 
 function prepareExams(items: Exam[], grade: CoreGrade) {
-  const enriched = items.map((exam) => enrichUnitExam(exam, grade));
+  const enriched = items.map((exam) => {
+    const enrichedExam = enrichUnitExam(exam, grade);
+    return {
+      ...enrichedExam,
+      questions: enrichedExam.questions.map((question) => {
+        const isWrittenResponse = question.section === 'Writing'
+          && /rewrite|rearrange|complete the second sentence|make a complete sentence|do not change/i.test(`${question.prompt} ${question.template ?? ''}`);
+        if (!isWrittenResponse || question.kind === 'typed') return question;
+
+        const correctAnswer = typeof question.answer === 'number'
+          ? question.options[question.answer]
+          : Array.isArray(question.answer) ? question.answer[0] : question.answer;
+        if (!correctAnswer) return question;
+
+        return {
+          ...question,
+          kind: 'typed' as const,
+          template: question.template ?? '[[0]]',
+          options: [],
+          answer: String(correctAnswer),
+          acceptedAnswers: [[String(correctAnswer)]],
+        };
+      }),
+    };
+  });
   const newByUnit = new Map(newBookUnitExams[grade].map((exam) => [exam.unit, exam]));
   const inserted = new Set<number>();
   const prepared: Exam[] = [];
@@ -58,7 +82,15 @@ function prepareExams(items: Exam[], grade: CoreGrade) {
 
 const exams8 = distributeExams(prepareExams([...baseExams8, ...additionalExams8, ...semester2Exams[8]], 8));
 const balancedExams9 = distributeExams(prepareExams([...exams9, ...semester2Exams[9]], 9));
-const balancedExams10 = distributeExams(prepareExams(upgradeEnglish10MidtermSix([...exams10, ...quickTests10, grade10Midterm1Supplement, ...semester2Exams[10]]), 10));
+const grade10WithSupplement = exams10.map((exam) => {
+  if (exam.menuGroup !== 'midterm' || exam.menuLabel !== 'Giữa kỳ I · Đề 1') return exam;
+  const supplementalWriting = grade10Midterm1Supplement.questions.filter((question) => question.section === 'Writing');
+  return {
+    ...exam,
+    questions: [...exam.questions, ...supplementalWriting].map((question, index) => ({ ...question, id: index + 1 })),
+  };
+});
+const balancedExams10 = distributeExams(prepareExams([...grade10WithSupplement, ...quickTests10, ...semester2Exams[10]], 10));
 
 export const examsByGrade: Record<GradeLevel, Exam[]> = {
   6: extendedExams[6],
