@@ -30,6 +30,8 @@ export type Question = {
   /** Source reading text retained when questions are mixed across tests. */
   passage?: string;
   passageTitle?: string;
+  /** Stable key that keeps one passage and all of its questions together. */
+  readingGroup?: string;
 };
 
 export type Exam = {
